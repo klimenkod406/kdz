@@ -1,0 +1,72 @@
+const express = require('express');
+const router = express.Router();
+const TicketModel = require('../models/Ticket');
+
+// GET /api/tickets - список всех заявок
+router.get('/', async (req, res) => {
+  try {
+    const tickets = await TicketModel.findAll();
+    res.json(tickets);
+  } catch (err) {
+    console.error('Ошибка получения заявок:', err);
+    res.status(500).json({ error: 'Ошибка получения заявок' });
+  }
+});
+
+// GET /api/tickets/stats - статистика
+router.get('/stats', async (req, res) => {
+  try {
+    const stats = await TicketModel.getStats();
+    res.json(stats);
+  } catch (err) {
+    console.error('Ошибка получения статистики:', err);
+    res.status(500).json({ error: 'Ошибка получения статистики' });
+  }
+});
+
+// POST /api/tickets - создание новой заявки
+router.post('/', async (req, res) => {
+  try {
+    const { employee_name, employee_email, employee_phone, department, subject, description, priority } = req.body;
+
+    // Валидация
+    if (!employee_name || !subject || !description) {
+      return res.status(400).json({ error: 'Поля "Имя", "Тема" и "Описание" обязательны' });
+    }
+
+    const ticket = await TicketModel.create({
+      employee_name,
+      employee_email,
+      employee_phone,
+      department,
+      subject,
+      description,
+      priority
+    });
+
+    res.status(201).json({ 
+      success: true, 
+      message: 'Заявка успешно создана',
+      ticket 
+    });
+  } catch (err) {
+    console.error('Ошибка создания заявки:', err);
+    res.status(500).json({ error: 'Ошибка создания заявки' });
+  }
+});
+
+// GET /api/tickets/:id - заявка по ID
+router.get('/:id', async (req, res) => {
+  try {
+    const ticket = await TicketModel.findById(req.params.id);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Заявка не найдена' });
+    }
+    res.json(ticket);
+  } catch (err) {
+    console.error('Ошибка получения заявки:', err);
+    res.status(500).json({ error: 'Ошибка получения заявки' });
+  }
+});
+
+module.exports = router;

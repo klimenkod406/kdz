@@ -1,0 +1,6 @@
+{
+  "name": "shared",
+  "version": "1.0.0",
+  "description": "Общие компоненты для серверов",
+  "main": "index.js"
+}

@@ -1,0 +1,9 @@
+{
+  "name": "ticket-system",
+  "version": "1.0.0",
+  "description": "Система заявок для сотрудников (2 сервера)",
+  "private": true,
+  "scripts": {
+    "install:all": "npm install"
+  }
+}
