@@ -1,62 +1,55 @@
 @echo off
-chcp 65001 >nul
 title Ticket System Installer
 
 cd /d "%~dp0"
 
 echo.
 echo ================================================
-echo    Установщик системы заявок
+echo    Ticket System Installer
 echo ================================================
 echo.
 
-REM Проверка Node.js
+echo Checking Node.js...
 node --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Node.js не найден!
-    echo Установите Node.js с https://nodejs.org/
+    echo [ERROR] Node.js not found!
+    echo Install from https://nodejs.org/
     pause
     exit /b 1
 )
 
-echo [OK] Node.js найден
+echo [OK] Node.js found
 echo.
 
-REM Проверка и установка зависимостей установщика
+echo Checking installer dependencies...
 if not exist "installer\node_modules" (
-    echo [!] Зависимости не найдены. Установка...
-    echo.
+    echo Installing dependencies...
     cd installer
     call npm install
     if %errorlevel% neq 0 (
         cd ..
         echo.
-        echo [ERROR] Ошибка установки зависимостей!
-        echo Попробуйте вручную:
-        echo   cd installer
-        echo   npm install
+        echo [ERROR] Failed to install!
+        echo Run: install-dependencies.bat
         pause
         exit /b 1
     )
     cd ..
-    echo [OK] Зависимости установлены
+    echo [OK] Dependencies installed
     echo.
 ) else (
-    echo [OK] Зависимости найдены
+    echo [OK] Dependencies found
     echo.
 )
 
 echo ================================================
-echo ЗАПУСК УСТАНОВЩИКА...
+echo Starting Installer...
 echo ================================================
 echo.
-echo Открывается новое окно консоли для установки.
-echo Не закрывайте окно до завершения установки!
+echo Opening new console window...
 echo.
 pause
 
-REM Запускаем установщик в новом окне консоли
-start "Установщик системы заявок" cmd /k "cd /d %cd% && node installer\setup.js"
+start "Ticket System Installer" cmd /k "cd /d %cd% && node installer\setup.js"
 
-REM Ждём завершения
 exit

@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 title Start Server 1
 
 cd /d "%~dp0"

@@ -1,0 +1,108 @@
+================================================================================
+                    START HERE - FIRST RUN AFTER GITHUB DOWNLOAD
+================================================================================
+
+PROBLEM: "Cannot find module 'inquirer'"
+
+CAUSE: node_modules folder is NOT in GitHub (listed in .gitignore).
+
+================================================================================
+                            SOLUTION (2 STEPS)
+================================================================================
+
+Step 1: Install Dependencies
+
+Windows:
+  Double-click: install-dependencies.bat
+
+Any OS:
+  cd installer
+  npm install
+  cd ..
+
+Step 2: Run Installer
+
+Windows:
+  Double-click: Установить сервер.bat
+
+Any OS:
+  node installer/setup.js
+
+================================================================================
+                    FULL INSTRUCTIONS
+================================================================================
+
+1. Download repository from GitHub
+2. Extract to folder (e.g., C:\kdz)
+3. Run install-dependencies.bat (or npm install in installer/)
+4. Wait for installation to complete
+5. Run Установить сервер.bat (or node installer/setup.js)
+6. Follow installer instructions
+
+================================================================================
+                    CHECK BEFORE RUNNING
+================================================================================
+
+Node.js installed:
+  node --version
+  (should show v16.x.x or higher)
+
+npm works:
+  npm --version
+  (should show version)
+
+================================================================================
+                    FILE STRUCTURE
+================================================================================
+
+kdz/
+├── install-dependencies.bat    ← Run this first (1 time)
+├── Установить сервер.bat       ← Run after dependencies installed
+├── Start Server 1.bat          ← Run Server 1 after setup
+├── Start Server 2.bat          ← Run Server 2 after setup
+├── installer/
+│   ├── setup.js
+│   ├── package.json
+│   └── node_modules/           ← Created after npm install
+├── server1/
+├── server2/
+└── shared/
+
+================================================================================
+                    TROUBLESHOOTING
+================================================================================
+
+Error: "Cannot find module 'inquirer'"
+Solution: cd installer && npm install
+
+Error: "npm not found"
+Solution: Install Node.js from https://nodejs.org/
+
+Error: "Node.js not found"
+Solution: Install Node.js from https://nodejs.org/
+
+Error: "EPERM: operation not permitted"
+Solution: Run console as Administrator
+
+Error: "network timeout"
+Solution: Check internet connection, retry npm install
+
+================================================================================
+                    QUICK START (Windows)
+================================================================================
+
+1. Download repository
+2. Extract to folder
+3. Double-click: install-dependencies.bat
+4. Wait for installation
+5. Double-click: Установить сервер.bat
+6. Follow instructions
+
+================================================================================
+
+For detailed instructions, see:
+- START_HERE.md (Russian)
+- GITHUB-README.txt (Russian)
+- README.md (Documentation)
+
+================================================================================
