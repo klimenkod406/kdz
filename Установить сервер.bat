@@ -19,20 +19,33 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-REM Проверка зависимостей установщика
+echo [OK] Node.js найден
+echo.
+
+REM Проверка и установка зависимостей установщика
 if not exist "installer\node_modules" (
-    echo Установка зависимостей установщика...
+    echo [!] Зависимости не найдены. Установка...
+    echo.
     cd installer
     call npm install
-    cd ..
     if %errorlevel% neq 0 (
+        cd ..
+        echo.
         echo [ERROR] Ошибка установки зависимостей!
+        echo Попробуйте вручную:
+        echo   cd installer
+        echo   npm install
         pause
         exit /b 1
     )
+    cd ..
+    echo [OK] Зависимости установлены
+    echo.
+) else (
+    echo [OK] Зависимости найдены
+    echo.
 )
 
-echo.
 echo ================================================
 echo ЗАПУСК УСТАНОВЩИКА...
 echo ================================================
