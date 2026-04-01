@@ -119,14 +119,6 @@
         .stat-card.resolved .stat-value { color: #27ae60; }
         .stat-card.closed .stat-value { color: #95a5a6; }
         
-        .stat-card.quality .stat-value { color: #9b59b6; }
-        .stat-card.cost .stat-value { color: #e67e22; }
-        .stat-card.sales .stat-value { color: #1abc9c; }
-        .stat-card.disorder .stat-value { color: #e74c3c; }
-        .stat-card.health .stat-value { color: #3498db; }
-        .stat-card.productivity .stat-value { color: #f1c40f; }
-        .stat-card.overstock .stat-value { color: #95a5a6; }
-        .stat-card.environment .stat-value { color: #2ecc71; }
 
         .filters-card {
             background: white;
@@ -621,42 +613,6 @@
                 <div class="stat-value" id="statClosed">0</div>
                 <div class="stat-label">Закрыты</div>
             </div>
-            <div class="stat-card quality">
-                <div class="stat-value" id="statQuality">0</div>
-                <div class="stat-label">Качество</div>
-            </div>
-            <div class="stat-card cost">
-                <div class="stat-value" id="statCost">0</div>
-                <div class="stat-label">Стоимость</div>
-            </div>
-            <div class="stat-card sales">
-                <div class="stat-value" id="statSales">0</div>
-                <div class="stat-label">Продажи</div>
-            </div>
-            <div class="stat-card disorder">
-                <div class="stat-value" id="statDisorder">0</div>
-                <div class="stat-label">Беспорядок</div>
-            </div>
-            <div class="stat-card health">
-                <div class="stat-value" id="statHealth">0</div>
-                <div class="stat-label">Безопасность</div>
-            </div>
-            <div class="stat-card productivity">
-                <div class="stat-value" id="statProductivity">0</div>
-                <div class="stat-label">Производительность</div>
-            </div>
-            <div class="stat-card overstock">
-                <div class="stat-value" id="statOverstock">0</div>
-                <div class="stat-label">Запасы</div>
-            </div>
-            <div class="stat-card environment">
-                <div class="stat-value" id="statEnvironment">0</div>
-                <div class="stat-label">Среда</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="statTotal">0</div>
-                <div class="stat-label">Всего</div>
-            </div>
         </div>
 
         <!-- Фильтры -->
@@ -670,7 +626,7 @@
                     <label>Статус</label>
                     <select id="statusFilter">
                         <option value="">Все</option>
-                        <option value="new">Новые</option>
+                        <option value="new" selected>Новые</option>
                         <option value="in_progress">В работе</option>
                         <option value="resolved">Решены</option>
                         <option value="closed">Закрыты</option>
@@ -813,15 +769,6 @@
                 document.getElementById('statInProgress').textContent = stats.in_progress_count || 0;
                 document.getElementById('statResolved').textContent = stats.resolved_count || 0;
                 document.getElementById('statClosed').textContent = stats.closed_count || 0;
-                document.getElementById('statQuality').textContent = stats.quality_count || 0;
-                document.getElementById('statCost').textContent = stats.cost_count || 0;
-                document.getElementById('statSales').textContent = stats.sales_count || 0;
-                document.getElementById('statDisorder').textContent = stats.disorder_count || 0;
-                document.getElementById('statHealth').textContent = stats.health_count || 0;
-                document.getElementById('statProductivity').textContent = stats.productivity_count || 0;
-                document.getElementById('statOverstock').textContent = stats.overstock_count || 0;
-                document.getElementById('statEnvironment').textContent = stats.environment_count || 0;
-                document.getElementById('statTotal').textContent = stats.total || 0;
             } catch (err) {
                 console.error('Ошибка загрузки статистики:', err);
             }
@@ -1188,6 +1135,9 @@
         // Инициализация
         checkAuth();
         loadStats();
+        
+        // Устанавливаем фильтр по умолчанию на "Новые"
+        currentFilters = { status: 'new' };
         loadTickets();
 
         // Автообновление статистики
