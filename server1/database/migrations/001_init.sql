@@ -16,8 +16,21 @@ CREATE TABLE IF NOT EXISTS tickets (
     sent_at TIMESTAMP WITH TIME ZONE
 );
 
+-- Таблица вложений (файлов)
+CREATE TABLE IF NOT EXISTS ticket_attachments (
+    id SERIAL PRIMARY KEY,
+    ticket_id UUID REFERENCES tickets(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_original_name VARCHAR(255) NOT NULL,
+    file_mime_type VARCHAR(100) NOT NULL,
+    file_size INTEGER NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Индекс для быстрого поиска несентых заявок
 CREATE INDEX IF NOT EXISTS idx_tickets_not_sent ON tickets(sent_to_server2, created_at);
+CREATE INDEX IF NOT EXISTS idx_attachments_ticket_id ON ticket_attachments(ticket_id);
 
 -- Таблица логов синхронизации
 CREATE TABLE IF NOT EXISTS sync_logs (

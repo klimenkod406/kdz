@@ -1,7 +1,11 @@
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
+const FormData = require('form-data');
 const TicketModel = require('../models/Ticket');
 const db = require('../config/database');
 const { formatDate } = require('../utils');
+const { UPLOAD_DIR } = require('../middleware/upload');
 
 class SyncService {
   constructor(server2Url) {
@@ -29,23 +33,46 @@ class SyncService {
 
       for (const ticket of tickets) {
         try {
+          // Получаем вложения заявки
+          const attachments = await TicketModel.getAttachments(ticket.id);
+
+          // Формируем данные для отправки через FormData
+          const formData = new FormData();
+          formData.append('id', ticket.id);
+          formData.append('employee_name', ticket.employee_name);
+          formData.append('employee_email', ticket.employee_email || '');
+          formData.append('employee_phone', ticket.employee_phone || '');
+          formData.append('department', ticket.department || '');
+          formData.append('subject', ticket.subject);
+          formData.append('description', ticket.description);
+          formData.append('priority', ticket.priority);
+          formData.append('created_at', ticket.created_at);
+
+          // Добавляем файлы
+          for (let i = 0; i < attachments.length; i++) {
+            const attachment = attachments[i];
+            const filePath = path.join(UPLOAD_DIR, attachment.file_name);
+            
+            if (fs.existsSync(filePath)) {
+              const fileStream = fs.createReadStream(filePath);
+              formData.append(`files`, fileStream, attachment.file_original_name);
+            }
+          }
+
           // Отправляем заявку на Server 2
-          await axios.post(`${this.server2Url}/api/tickets/sync`, {
-            id: ticket.id,
-            employee_name: ticket.employee_name,
-            employee_email: ticket.employee_email,
-            employee_phone: ticket.employee_phone,
-            department: ticket.department,
-            subject: ticket.subject,
-            description: ticket.description,
-            priority: ticket.priority,
-            created_at: ticket.created_at
+          await axios.post(`${this.server2Url}/api/tickets/sync`, formData, {
+            headers: {
+              ...formData.getHeaders(),
+              'Content-Length': formData.getLengthSync()
+            },
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity
           });
 
           // Помечаем как отправленную
           await TicketModel.markAsSent(ticket.id);
           sentCount++;
-          console.log(`  ✓ Заявка ${ticket.id} отправлена`);
+          console.log(`  ✓ Заявка ${ticket.id} отправлена (${attachments.length} файлов)`);
 
         } catch (err) {
           errorCount++;

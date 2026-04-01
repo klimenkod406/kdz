@@ -1,7 +1,88 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const TicketModel = require('../models/Ticket');
 const { requireAuth } = require('./auth');
+const { upload, uploadErrorHandler, UPLOAD_DIR } = require('../middleware/upload');
+
+// POST /api/tickets/sync - синхронизация с Server 1 (внутренний API)
+router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, res) => {
+  try {
+    const {
+      id,
+      employee_name,
+      employee_email,
+      employee_phone,
+      department,
+      subject,
+      description,
+      priority,
+      created_at,
+      attachments_count
+    } = req.body;
+
+    // Создаём заявку
+    const ticket = await TicketModel.createFromSync({
+      id,
+      employee_name,
+      employee_email,
+      employee_phone,
+      department,
+      subject,
+      description,
+      priority,
+      created_at
+    });
+
+    // Обрабатываем файлы
+    const attachments = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        // Получаем информацию о файле из body
+        const fileInfoStr = req.body[`file_${req.files.indexOf(file)}_info`];
+        let fileInfo = {
+          file_name: file.filename,
+          file_original_name: file.originalname,
+          file_mime_type: file.mimetype,
+          file_size: file.size
+        };
+
+        if (fileInfoStr) {
+          fileInfo = JSON.parse(fileInfoStr);
+          fileInfo.file_name = file.filename;
+        }
+
+        const attachment = await TicketModel.addAttachmentFromSync(id, {
+          file_name: fileInfo.file_name,
+          file_original_name: fileInfo.file_original_name,
+          file_mime_type: fileInfo.file_mime_type,
+          file_size: fileInfo.file_size,
+          file_path: path.join('uploads', file.filename)
+        });
+        attachments.push(attachment);
+      }
+    }
+
+    res.json({ 
+      success: true, 
+      ticket,
+      attachments_count: attachments.length
+    });
+  } catch (err) {
+    console.error('Ошибка синхронизации:', err);
+    // Удаляем файлы если синхронизация не удалась
+    if (req.files) {
+      for (const file of req.files) {
+        const filePath = path.join(UPLOAD_DIR, file.filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
+      }
+    }
+    res.status(500).json({ error: 'Ошибка синхронизации' });
+  }
+});
 
 // GET /api/tickets - список заявок (требуется авторизация)
 router.get('/', requireAuth, async (req, res) => {
@@ -67,11 +148,12 @@ router.get('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Заявка не найдена' });
     }
 
+    const attachments = await TicketModel.getAttachments(req.params.id);
     const comments = await TicketModel.getComments(req.params.id);
     const history = await TicketModel.getHistory(req.params.id);
 
     res.json({
-      ticket,
+      ticket: { ...ticket, attachments },
       comments,
       history
     });
@@ -81,14 +163,28 @@ router.get('/:id', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/tickets/sync - синхронизация с Server 1 (внутренний API)
-router.post('/sync', async (req, res) => {
+// GET /api/tickets/:id/files/:filename - скачивание файла (требуется авторизация)
+router.get('/:id/files/:filename', requireAuth, async (req, res) => {
   try {
-    const ticket = await TicketModel.createFromSync(req.body);
-    res.json({ success: true, ticket });
+    const { id, filename } = req.params;
+
+    // Проверяем существование заявки
+    const ticket = await TicketModel.findById(id);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Заявка не найдена' });
+    }
+
+    // Проверяем существование файла
+    const filePath = path.join(UPLOAD_DIR, filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Файл не найден' });
+    }
+
+    // Отправляем файл
+    res.download(filePath);
   } catch (err) {
-    console.error('Ошибка синхронизации:', err);
-    res.status(500).json({ error: 'Ошибка синхронизации' });
+    console.error('Ошибка скачивания файла:', err);
+    res.status(500).json({ error: 'Ошибка скачивания файла' });
   }
 });
 

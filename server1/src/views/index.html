@@ -19,7 +19,7 @@
         }
 
         .container {
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
             background: white;
             border-radius: 10px;
@@ -91,6 +91,12 @@
             transform: translateY(0);
         }
 
+        .btn:disabled {
+            transform: none;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .alert {
             padding: 15px;
             border-radius: 5px;
@@ -122,6 +128,120 @@
         .row .form-group {
             flex: 1;
         }
+
+        /* Стили для загрузки файлов */
+        .file-upload {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #f0f0ff;
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background: #e8e8ff;
+        }
+
+        .file-upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-text {
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-hint {
+            font-size: 12px;
+            color: #999;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-list {
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            margin-bottom: 8px;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .file-icon {
+            font-size: 24px;
+        }
+
+        .file-name {
+            font-size: 13px;
+            color: #333;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .file-size {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .file-remove {
+            background: none;
+            border: none;
+            color: #e74c3c;
+            cursor: pointer;
+            font-size: 18px;
+            padding: 5px;
+        }
+
+        .file-remove:hover {
+            color: #c0392b;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #eee;
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -131,7 +251,7 @@
 
         <div id="alert" class="alert"></div>
 
-        <form id="ticketForm">
+        <form id="ticketForm" enctype="multipart/form-data">
             <div class="form-group">
                 <label for="employee_name">ФИО <span class="required">*</span></label>
                 <input type="text" id="employee_name" name="employee_name" required placeholder="Иванов Иван Иванович">
@@ -173,13 +293,129 @@
                 <textarea id="description" name="description" required placeholder="Подробно опишите вашу проблему или запрос"></textarea>
             </div>
 
-            <button type="submit" class="btn">Отправить заявку</button>
+            <!-- Загрузка файлов -->
+            <div class="form-group">
+                <label>Вложения (фото, видео, документы)</label>
+                <div class="file-upload" id="fileUploadZone">
+                    <div class="file-upload-icon">📎</div>
+                    <div class="file-upload-text">Перетащите файлы сюда или кликните для выбора</div>
+                    <div class="file-upload-hint">
+                        Разрешены: изображения, документы (PDF, Word, Excel), видео, архивы<br>
+                        Максимум 10 файлов, до 50MB каждый
+                    </div>
+                </div>
+                <input type="file" id="fileInput" name="files" multiple accept="image/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.csv,.zip,.rar,.7z">
+                <div class="file-list" id="fileList"></div>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="submitBtn">Отправить заявку</button>
         </form>
     </div>
 
     <script>
         const form = document.getElementById('ticketForm');
         const alert = document.getElementById('alert');
+        const fileUploadZone = document.getElementById('fileUploadZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileList = document.getElementById('fileList');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const submitBtn = document.getElementById('submitBtn');
+
+        let selectedFiles = [];
+
+        // Иконки для типов файлов
+        function getFileIcon(filename) {
+            const ext = filename.split('.').pop().toLowerCase();
+            const imageExts = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'tiff'];
+            const videoExts = ['mp4', 'webm', 'mov', 'avi'];
+            const docExts = ['pdf', 'doc', 'docx', 'xls', 'xlsx'];
+            
+            if (imageExts.includes(ext)) return '🖼️';
+            if (videoExts.includes(ext)) return '🎬';
+            if (docExts.includes(ext)) return '📄';
+            if (ext === 'zip' || ext === 'rar' || ext === '7z') return '📦';
+            if (ext === 'txt' || ext === 'csv') return '📝';
+            return '📎';
+        }
+
+        // Форматирование размера файла
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Обновление списка файлов
+        function updateFileList() {
+            fileList.innerHTML = selectedFiles.map((file, index) => `
+                <div class="file-item">
+                    <div class="file-info">
+                        <span class="file-icon">${getFileIcon(file.name)}</span>
+                        <div>
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-size">${formatFileSize(file.size)}</div>
+                        </div>
+                    </div>
+                    <button type="button" class="file-remove" onclick="removeFile(${index})">×</button>
+                </div>
+            `).join('');
+        }
+
+        // Добавление файлов
+        function addFiles(files) {
+            const maxFiles = 10;
+            const maxSize = 50 * 1024 * 1024; // 50MB
+
+            for (const file of files) {
+                if (selectedFiles.length >= maxFiles) {
+                    showAlert('⚠️ Максимум 10 файлов', 'error');
+                    break;
+                }
+                if (file.size > maxSize) {
+                    showAlert(`⚠️ Файл "${file.name}" слишком большой (максимум 50MB)`, 'error');
+                    continue;
+                }
+                selectedFiles.push(file);
+            }
+            updateFileList();
+        }
+
+        // Удаление файла
+        function removeFile(index) {
+            selectedFiles.splice(index, 1);
+            updateFileList();
+        }
+
+        // Drag & Drop
+        fileUploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUploadZone.classList.add('dragover');
+        });
+
+        fileUploadZone.addEventListener('dragleave', () => {
+            fileUploadZone.classList.remove('dragover');
+        });
+
+        fileUploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUploadZone.classList.remove('dragover');
+            addFiles(e.dataTransfer.files);
+        });
+
+        fileUploadZone.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            addFiles(e.target.files);
+            fileInput.value = ''; // Сброс для возможности выбора тех же файлов
+        });
 
         function showAlert(message, type) {
             alert.textContent = message;
@@ -193,6 +429,16 @@
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            if (selectedFiles.length === 0) {
+                // Отправка без файлов
+                submitForm();
+            } else {
+                // Отправка с файлами через FormData
+                submitFormWithFiles();
+            }
+        });
+
+        async function submitForm() {
             const formData = new FormData(form);
             const data = Object.fromEntries(formData.entries());
 
@@ -210,13 +456,90 @@
                 if (response.ok && result.success) {
                     showAlert('✅ Заявка успешно отправлена! Номер: ' + result.ticket.id.substring(0, 8), 'success');
                     form.reset();
+                    selectedFiles = [];
+                    updateFileList();
                 } else {
                     showAlert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'), 'error');
                 }
             } catch (err) {
                 showAlert('❌ Ошибка соединения с сервером', 'error');
             }
-        });
+        }
+
+        async function submitFormWithFiles() {
+            const formData = new FormData();
+
+            // Добавляем текстовые поля
+            formData.append('employee_name', document.getElementById('employee_name').value);
+            formData.append('employee_email', document.getElementById('employee_email').value);
+            formData.append('employee_phone', document.getElementById('employee_phone').value);
+            formData.append('department', document.getElementById('department').value);
+            formData.append('priority', document.getElementById('priority').value);
+            formData.append('subject', document.getElementById('subject').value);
+            formData.append('description', document.getElementById('description').value);
+
+            // Добавляем файлы
+            for (const file of selectedFiles) {
+                formData.append('files', file);
+            }
+
+            try {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Отправка...';
+                progressBar.classList.add('active');
+                progressFill.style.width = '0%';
+
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (e) => {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressFill.style.width = percent + '%';
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    progressBar.classList.remove('active');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Отправить заявку';
+
+                    if (xhr.status === 201) {
+                        const result = JSON.parse(xhr.responseText);
+                        if (result.success) {
+                            showAlert('✅ Заявка успешно отправлена! Номер: ' + result.ticket.id.substring(0, 8), 'success');
+                            form.reset();
+                            selectedFiles = [];
+                            updateFileList();
+                        } else {
+                            showAlert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'), 'error');
+                        }
+                    } else {
+                        try {
+                            const result = JSON.parse(xhr.responseText);
+                            showAlert('❌ Ошибка: ' + (result.error || 'Неизвестная ошибка'), 'error');
+                        } catch {
+                            showAlert('❌ Ошибка сервера', 'error');
+                        }
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    progressBar.classList.remove('active');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Отправить заявку';
+                    showAlert('❌ Ошибка соединения с сервером', 'error');
+                });
+
+                xhr.open('POST', '/api/tickets');
+                xhr.send(formData);
+
+            } catch (err) {
+                progressBar.classList.remove('active');
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Отправить заявку';
+                showAlert('❌ Ошибка: ' + err.message, 'error');
+            }
+        }
     </script>
 </body>
 </html>

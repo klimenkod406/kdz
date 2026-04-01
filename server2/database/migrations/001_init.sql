@@ -35,6 +35,21 @@ CREATE TABLE IF NOT EXISTS tickets (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Таблица вложений (файлов)
+CREATE TABLE IF NOT EXISTS ticket_attachments (
+    id SERIAL PRIMARY KEY,
+    ticket_id UUID REFERENCES tickets(id) ON DELETE CASCADE,
+    file_name VARCHAR(255) NOT NULL,
+    file_original_name VARCHAR(255) NOT NULL,
+    file_mime_type VARCHAR(100) NOT NULL,
+    file_size INTEGER NOT NULL,
+    file_path VARCHAR(500) NOT NULL,
+    received_from_server1_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_attachments_ticket_id ON ticket_attachments(ticket_id);
+
 -- Таблица комментариев к заявкам
 CREATE TABLE IF NOT EXISTS ticket_comments (
     id SERIAL PRIMARY KEY,

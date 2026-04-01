@@ -84,27 +84,56 @@ async function cleanupUnnecessaryFiles(serverType) {
 
 async function installDependencies(serverType) {
   console.log(colors.info('Установка зависимостей сервера...'));
-  
+
   const serverPath = path.join(ROOT_DIR, serverConfigs[serverType].srcFolder);
-  
+
   return new Promise((resolve, reject) => {
     const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
     const install = spawn(npm, ['install'], {
       cwd: serverPath,
       stdio: 'pipe'
     });
+
+    let output = '';
     
     install.stdout.on('data', (data) => {
-      console.log(colors.info(`  ${data.toString().trim()}`));
+      output += data.toString();
     });
-    
+
     install.stderr.on('data', (data) => {
       console.error(colors.error(`  ${data.toString().trim()}`));
     });
-    
+
     install.on('close', (code) => {
       if (code === 0) {
         console.log(colors.success('✓ Зависимости установлены'));
+        
+        // Проверка критических зависимостей
+        const criticalPackages = {
+          server1: ['express', 'pg', 'multer', 'axios', 'form-data'],
+          server2: ['express', 'pg', 'multer', 'bcrypt', 'express-session', 'connect-pg-simple']
+        };
+        
+        const required = criticalPackages[serverType] || [];
+        if (required.length > 0) {
+          console.log(colors.info('  Проверка критических пакетов...'));
+          let allInstalled = true;
+          
+          for (const pkg of required) {
+            try {
+              require.resolve(pkg, { paths: [serverPath] });
+              console.log(colors.success(`    ✓ ${pkg}`));
+            } catch (e) {
+              console.log(colors.warning(`    ⚠ ${pkg} - не найден`));
+              allInstalled = false;
+            }
+          }
+          
+          if (!allInstalled) {
+            console.log(colors.warning('  Некоторые пакеты не установлены. Попробуйте запустить npm install вручную.'));
+          }
+        }
+        
         resolve();
       } else {
         reject(new Error(`npm install exited with code ${code}`));
@@ -128,7 +157,7 @@ async function askServerType() {
   return serverType;
 }
 
-async function askDatabaseConfig() {
+async function askDatabaseConfig(serverType) {
   const config = await inquirer.prompt([
     {
       type: 'input',
@@ -158,10 +187,7 @@ async function askDatabaseConfig() {
       type: 'input',
       name: 'dbName',
       message: 'Имя базы данных:',
-      default: (answers) => {
-        const serverType = answers._previousServerType || 'server1';
-        return serverConfigs[serverType].dbDefaultName;
-      }
+      default: () => serverConfigs[serverType].dbDefaultName
     }
   ]);
   return config;
@@ -216,7 +242,7 @@ async function askServer2Config() {
   return config;
 }
 
-async function askNetworkConfig() {
+async function askNetworkConfig(serverType) {
   const config = await inquirer.prompt([
     {
       type: 'input',
@@ -228,10 +254,7 @@ async function askNetworkConfig() {
       type: 'input',
       name: 'port',
       message: 'Порт сервера:',
-      default: (answers) => {
-        const serverType = answers._previousServerType;
-        return serverType === 'server1' ? '3001' : '3002';
-      }
+      default: () => serverType === 'server1' ? '3001' : '3002'
     }
   ]);
   return config;
@@ -389,8 +412,8 @@ async function main() {
     await installDependencies(serverType);
 
     // Конфигурация БД
-    const dbConfig = await askDatabaseConfig();
-    
+    const dbConfig = await askDatabaseConfig(serverType);
+
     // Дополнительные настройки в зависимости от типа сервера
     let extraConfig = {};
     if (serverType === 'server1') {
@@ -400,8 +423,7 @@ async function main() {
     }
 
     // Сетевые настройки
-    const networkConfig = await askNetworkConfig();
-    networkConfig._previousServerType = serverType;
+    const networkConfig = await askNetworkConfig(serverType);
 
     // Тест подключения к PostgreSQL
     const client = new Client({
@@ -441,12 +463,44 @@ async function main() {
     // Создание .env файла
     await createEnvFile(serverType, dbConfig, extraConfig, networkConfig);
 
-    console.log('\n' + colors.success('='.repeat(50)));
+    console.log('\n' + colors.success('='.repeat(60)));
     console.log(colors.success('   Установка завершена успешно!'));
-    console.log(colors.success('='.repeat(50)) + '\n');
+    console.log(colors.success('='.repeat(60)) + '\n');
 
-    console.log(colors.info('Запуск сервера...\n'));
+    // Информация о сервере
+    if (serverType === 'server1') {
+      console.log(colors.success('📥 Сервер 1 (Прием заявок) готов к работе!'));
+      console.log('');
+      console.log('  Форма подачи заявок:');
+      console.log(`  http://localhost:${networkConfig.port}`);
+      console.log('');
+      console.log('  Статус синхронизации:');
+      console.log(`  http://localhost:${networkConfig.port}/status`);
+      console.log('');
+      console.log('  Особенности:');
+      console.log('  ✓ Загрузка файлов (фото, видео, документы)');
+      console.log('  ✓ Автоматическая синхронизация с Server 2');
+      console.log(`  ✓ Интервал синхронизации: ${extraConfig.syncInterval} мин`);
+    } else if (serverType === 'server2') {
+      console.log(colors.success('💾 Сервер 2 (Хранение и админ-панель) готов к работе!'));
+      console.log('');
+      console.log('  Админ-панель:');
+      console.log(`  http://localhost:${networkConfig.port}/admin`);
+      console.log('');
+      console.log('  Данные для входа:');
+      console.log(`  Логин: ${extraConfig.adminUsername}`);
+      console.log(`  Пароль: ${extraConfig.adminPassword}`);
+      console.log('');
+      console.log('  Особенности:');
+      console.log('  ✓ Просмотр вложений (lightbox для фото и видео)');
+      console.log('  ✓ История изменений статусов');
+      console.log('  ✓ Комментарии к заявкам');
+      console.log('  ✓ Статистика по заявкам');
+    }
     
+    console.log('');
+    console.log(colors.info('Запуск сервера...\n'));
+
     // Запуск сервера
     await startServer(serverType);
 

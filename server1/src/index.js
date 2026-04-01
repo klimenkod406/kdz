@@ -5,6 +5,7 @@ const path = require('path');
 const SyncService = require('./services/SyncService');
 const ticketsRouter = require('./routes/tickets');
 const syncRouter = require('./routes/sync');
+const { uploadErrorHandler } = require('./middleware/upload');
 
 // Локальная копия shared утилит
 const { formatDate } = require('./utils');
@@ -20,8 +21,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Статические файлы (верстка)
+// Статические файлы (верстка + загрузки)
 app.use(express.static(path.join(__dirname, 'views')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Маршруты
 app.use('/api/tickets', ticketsRouter);
@@ -55,7 +57,8 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Страница не найдена' });
 });
 
-// Обработка ошибок
+// Обработка ошибок (включая ошибки загрузки файлов)
+app.use(uploadErrorHandler);
 app.use((err, req, res, next) => {
   console.error('Ошибка:', err);
   res.status(500).json({ error: 'Внутренняя ошибка сервера' });

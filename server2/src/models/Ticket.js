@@ -48,6 +48,43 @@ class TicketModel {
     return result.rows[0];
   }
 
+  // Добавление вложения к заявке (при синхронизации)
+  static async addAttachmentFromSync(ticketId, fileData) {
+    const {
+      file_name,
+      file_original_name,
+      file_mime_type,
+      file_size,
+      file_path
+    } = fileData;
+
+    const query = `
+      INSERT INTO ticket_attachments (
+        ticket_id, file_name, file_original_name, file_mime_type, file_size, file_path
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+
+    const values = [
+      ticketId,
+      file_name,
+      file_original_name,
+      file_mime_type,
+      file_size,
+      file_path
+    ];
+
+    const result = await db.query(query, values);
+    return result.rows[0];
+  }
+
+  // Получение вложений заявки
+  static async getAttachments(ticketId) {
+    const query = 'SELECT * FROM ticket_attachments WHERE ticket_id = $1 ORDER BY created_at ASC';
+    const result = await db.query(query, [ticketId]);
+    return result.rows;
+  }
+
   // Создание заявки (локально)
   static async create(ticketData) {
     const {

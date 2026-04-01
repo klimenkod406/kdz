@@ -6,6 +6,7 @@ const db = require('./config/database');
 const AdminModel = require('./models/Admin');
 const authRouter = require('./routes/auth').router;
 const ticketsRouter = require('./routes/tickets');
+const { uploadErrorHandler } = require('./middleware/upload');
 
 // Локальная копия shared утилит
 const { formatDate } = require('./utils');
@@ -36,8 +37,9 @@ app.use(session({
   }
 }));
 
-// Статические файлы
+// Статические файлы (верстка + загрузки)
 app.use(express.static(path.join(__dirname, 'views')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Маршруты
 app.use('/api/auth', authRouter);
@@ -58,7 +60,8 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Страница не найдена' });
 });
 
-// Обработка ошибок
+// Обработка ошибок (включая ошибки загрузки файлов)
+app.use(uploadErrorHandler);
 app.use((err, req, res, next) => {
   console.error('Ошибка:', err);
   res.status(500).json({ error: 'Внутренняя ошибка сервера' });
