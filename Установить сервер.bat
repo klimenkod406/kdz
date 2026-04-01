@@ -1,69 +1,68 @@
 @echo off
-chcp 65001 >nul
-title Установщик системы заявок
+title Ticket System Installer
 
 echo.
 echo ================================================
-echo    Установщик системы заявок
+echo    Ticket System Installer
 echo ================================================
 echo.
 
 cd /d "%~dp0"
 
-echo Проверка Node.js...
+echo Checking Node.js...
 node --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Node.js не найден!
-    echo Установите Node.js с https://nodejs.org/
+    echo [ERROR] Node.js not found!
+    echo Install Node.js from https://nodejs.org/
     pause
     exit /b 1
 )
 
-echo [OK] Node.js найден
+echo [OK] Node.js found
 echo.
 
-echo Проверка npm...
+echo Checking npm...
 npm --version >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] npm не найден!
+    echo [ERROR] npm not found!
     pause
     exit /b 1
 )
 
-echo [OK] npm найден
+echo [OK] npm found
 echo.
 
-echo Установка зависимостей установщика...
+echo Installing installer dependencies...
 cd installer
 call npm install
 if %errorlevel% neq 0 (
-    echo [ERROR] Ошибка установки зависимостей!
+    echo [ERROR] Failed to install dependencies!
     pause
     exit /b 1
 )
 
-echo [OK] Зависимости установлены
+echo [OK] Dependencies installed
 echo.
 
-echo Запуск установщика...
+echo Starting installer...
 echo.
 node setup.js
 
 if %errorlevel% neq 0 (
     echo.
-    echo [ERROR] Ошибка установщика!
+    echo [ERROR] Installer failed!
     pause
     exit /b 1
 )
 
 echo.
 echo ================================================
-echo    Установка завершена!
+echo    Installation completed!
 echo ================================================
 echo.
-echo Теперь вы можете запустить сервер через ярлык:
-echo   - Запустить Server 1.bat  (для сервера заявок)
-echo   - Запустить Server 2.bat  (для админ-панели)
+echo Now you can start the server using:
+echo   - Start Server 1.bat  (for ticket server)
+echo   - Start Server 2.bat  (for admin panel)
 echo.
 
 pause
