@@ -1,36 +1,20 @@
 @echo off
-title Start Server 1 - Ticket Receiver
+chcp 65001 >nul
+title Start Server 1
 
 cd /d "%~dp0"
 
 if not exist "server1" (
-    echo [ERROR] server1 folder not found!
-    echo This server may already be configured as Server 2.
+    echo [ERROR] This is Server 2! server1 folder not found.
     pause
     exit /b 1
 )
 
 if not exist "server1\.env" (
-    echo [ERROR] server1\.env not found!
-    echo Run installer first and select Server 1.
+    echo [ERROR] Run installer first!
     pause
     exit /b 1
 )
 
-if not exist "server1\node_modules" (
-    echo Installing dependencies...
-    cd server1
-    call npm install
-    cd ..
-)
-
-echo.
-echo ================================================
-echo    Starting Server 1 - Ticket Receiver
-echo ================================================
-echo.
-
 cd server1
-node src/index.js
-
-pause
+node src\index.js

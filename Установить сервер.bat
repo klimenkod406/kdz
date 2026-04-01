@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 title Ticket System Installer
 
 cd /d "%~dp0"
@@ -48,12 +49,14 @@ echo.
 echo Starting installer...
 echo.
 node installer\setup.js
+set INSTALLER_RESULT=%ERRORLEVEL%
 
-if %errorlevel% neq 0 (
+if %INSTALLER_RESULT% neq 0 (
     echo.
-    echo [ERROR] Installer failed!
+    echo [ERROR] Installer failed with code %INSTALLER_RESULT%!
+    echo Press any key to exit...
     pause
-    exit /b 1
+    exit /b %INSTALLER_RESULT%
 )
 
 echo.
@@ -61,5 +64,5 @@ echo ================================================
 echo    Installation completed!
 echo ================================================
 echo.
-
-pause
+echo Press any key to continue...
+pause >nul
