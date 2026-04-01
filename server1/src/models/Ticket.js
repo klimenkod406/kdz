@@ -6,29 +6,26 @@ class TicketModel {
     const {
       employee_name,
       employee_email,
-      employee_phone,
       department,
+      area,
       subject,
-      description,
-      priority = 'normal'
+      description
     } = ticketData;
 
     const query = `
       INSERT INTO tickets (
-        employee_name, employee_email, employee_phone, department,
-        subject, description, priority
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        employee_name, employee_email, department, area, subject, description
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
 
     const values = [
       employee_name,
       employee_email || null,
-      employee_phone || null,
       department || null,
+      area,
       subject,
-      description,
-      priority
+      description
     ];
 
     const result = await db.query(query, values);

@@ -263,23 +263,23 @@
                     <input type="email" id="employee_email" name="employee_email" placeholder="example@company.ru">
                 </div>
                 <div class="form-group">
-                    <label for="employee_phone">Телефон</label>
-                    <input type="tel" id="employee_phone" name="employee_phone" placeholder="+7 (999) 000-00-00">
+                    <label for="department">Отдел</label>
+                    <input type="text" id="department" name="department" placeholder="Например: Бухгалтерия">
                 </div>
             </div>
 
             <div class="form-group">
-                <label for="department">Отдел</label>
-                <input type="text" id="department" name="department" placeholder="Например: Бухгалтерия">
-            </div>
-
-            <div class="form-group">
-                <label for="priority">Приоритет</label>
-                <select id="priority" name="priority">
-                    <option value="low">Низкий</option>
-                    <option value="normal" selected>Обычный</option>
-                    <option value="high">Высокий</option>
-                    <option value="critical">Критический</option>
+                <label for="area">Область <span class="required">*</span></label>
+                <select id="area" name="area" required>
+                    <option value="" disabled selected>Выберите область</option>
+                    <option value="quality">Качество продукта</option>
+                    <option value="cost">Стоимость</option>
+                    <option value="sales">Увеличение продаж</option>
+                    <option value="disorder">Беспорядок</option>
+                    <option value="health">Здоровье и безопасность</option>
+                    <option value="productivity">Производительность</option>
+                    <option value="overstock">Чрезмерные запасы</option>
+                    <option value="environment">Окружающая среда</option>
                 </select>
             </div>
 

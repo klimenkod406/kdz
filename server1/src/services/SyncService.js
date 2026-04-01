@@ -41,12 +41,10 @@ class SyncService {
           formData.append('id', ticket.id);
           formData.append('employee_name', ticket.employee_name);
           formData.append('employee_email', ticket.employee_email || '');
-          formData.append('employee_phone', ticket.employee_phone || '');
           formData.append('department', ticket.department || '');
+          formData.append('area', ticket.area);
           formData.append('subject', ticket.subject);
           formData.append('description', ticket.description);
-          formData.append('priority', ticket.priority);
-          formData.append('created_at', ticket.created_at);
 
           // Добавляем файлы
           for (let i = 0; i < attachments.length; i++) {

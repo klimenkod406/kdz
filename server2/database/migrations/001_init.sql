@@ -24,11 +24,10 @@ CREATE TABLE IF NOT EXISTS tickets (
     id UUID PRIMARY KEY,
     employee_name VARCHAR(255) NOT NULL,
     employee_email VARCHAR(255),
-    employee_phone VARCHAR(50),
     department VARCHAR(255),
+    area VARCHAR(50) NOT NULL,
     subject VARCHAR(500) NOT NULL,
     description TEXT NOT NULL,
-    priority VARCHAR(20) DEFAULT 'normal',
     status VARCHAR(50) DEFAULT 'new',
     received_from_server1_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -73,6 +72,6 @@ CREATE TABLE IF NOT EXISTS ticket_history (
 -- Индексы для быстрого поиска
 CREATE INDEX IF NOT EXISTS idx_tickets_status ON tickets(status);
 CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets(created_at);
-CREATE INDEX IF NOT EXISTS idx_tickets_priority ON tickets(priority);
+CREATE INDEX IF NOT EXISTS idx_tickets_area ON tickets(area);
 CREATE INDEX IF NOT EXISTS idx_ticket_comments_ticket_id ON ticket_comments(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_ticket_history_ticket_id ON ticket_history(ticket_id);

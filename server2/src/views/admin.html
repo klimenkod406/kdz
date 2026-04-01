@@ -118,7 +118,15 @@
         .stat-card.in_progress .stat-value { color: #f39c12; }
         .stat-card.resolved .stat-value { color: #27ae60; }
         .stat-card.closed .stat-value { color: #95a5a6; }
-        .stat-card.critical .stat-value { color: #e74c3c; }
+        
+        .stat-card.quality .stat-value { color: #9b59b6; }
+        .stat-card.cost .stat-value { color: #e67e22; }
+        .stat-card.sales .stat-value { color: #1abc9c; }
+        .stat-card.disorder .stat-value { color: #e74c3c; }
+        .stat-card.health .stat-value { color: #3498db; }
+        .stat-card.productivity .stat-value { color: #f1c40f; }
+        .stat-card.overstock .stat-value { color: #95a5a6; }
+        .stat-card.environment .stat-value { color: #2ecc71; }
 
         .filters-card {
             background: white;
@@ -216,7 +224,7 @@
         .status-resolved { background: #e8f5e9; color: #388e3c; }
         .status-closed { background: #f5f5f5; color: #757575; }
 
-        .priority-badge {
+        .area-badge {
             padding: 4px 10px;
             border-radius: 4px;
             font-size: 11px;
@@ -224,10 +232,14 @@
             text-transform: uppercase;
         }
 
-        .priority-low { background: #e8f5e9; color: #2e7d32; }
-        .priority-normal { background: #e3f2fd; color: #1976d2; }
-        .priority-high { background: #fff3e0; color: #f57c00; }
-        .priority-critical { background: #ffebee; color: #c62828; }
+        .area-quality { background: #f3e5f5; color: #7b1fa2; }
+        .area-cost { background: #fff3e0; color: #f57c00; }
+        .area-sales { background: #e0f2f1; color: #00796b; }
+        .area-disorder { background: #ffebee; color: #c62828; }
+        .area-health { background: #e3f2fd; color: #1976d2; }
+        .area-productivity { background: #fffde7; color: #fbc02d; }
+        .area-overstock { background: #f5f5f5; color: #616161; }
+        .area-environment { background: #e8f5e9; color: #388e3c; }
 
         .btn-sm {
             padding: 5px 10px;
@@ -609,9 +621,37 @@
                 <div class="stat-value" id="statClosed">0</div>
                 <div class="stat-label">Закрыты</div>
             </div>
-            <div class="stat-card critical">
-                <div class="stat-value" id="statCritical">0</div>
-                <div class="stat-label">Критичные</div>
+            <div class="stat-card quality">
+                <div class="stat-value" id="statQuality">0</div>
+                <div class="stat-label">Качество</div>
+            </div>
+            <div class="stat-card cost">
+                <div class="stat-value" id="statCost">0</div>
+                <div class="stat-label">Стоимость</div>
+            </div>
+            <div class="stat-card sales">
+                <div class="stat-value" id="statSales">0</div>
+                <div class="stat-label">Продажи</div>
+            </div>
+            <div class="stat-card disorder">
+                <div class="stat-value" id="statDisorder">0</div>
+                <div class="stat-label">Беспорядок</div>
+            </div>
+            <div class="stat-card health">
+                <div class="stat-value" id="statHealth">0</div>
+                <div class="stat-label">Безопасность</div>
+            </div>
+            <div class="stat-card productivity">
+                <div class="stat-value" id="statProductivity">0</div>
+                <div class="stat-label">Производительность</div>
+            </div>
+            <div class="stat-card overstock">
+                <div class="stat-value" id="statOverstock">0</div>
+                <div class="stat-label">Запасы</div>
+            </div>
+            <div class="stat-card environment">
+                <div class="stat-value" id="statEnvironment">0</div>
+                <div class="stat-label">Среда</div>
             </div>
             <div class="stat-card">
                 <div class="stat-value" id="statTotal">0</div>
@@ -637,13 +677,17 @@
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Приоритет</label>
-                    <select id="priorityFilter">
+                    <label>Область</label>
+                    <select id="areaFilter">
                         <option value="">Все</option>
-                        <option value="low">Низкий</option>
-                        <option value="normal">Обычный</option>
-                        <option value="high">Высокий</option>
-                        <option value="critical">Критический</option>
+                        <option value="quality">Качество продукта</option>
+                        <option value="cost">Стоимость</option>
+                        <option value="sales">Увеличение продаж</option>
+                        <option value="disorder">Беспорядок</option>
+                        <option value="health">Здоровье и безопасность</option>
+                        <option value="productivity">Производительность</option>
+                        <option value="overstock">Чрезмерные запасы</option>
+                        <option value="environment">Окружающая среда</option>
                     </select>
                 </div>
                 <div class="filter-group" style="flex: 0;">
@@ -662,7 +706,7 @@
                         <th onclick="sortTable('employee_name')">Сотрудник</th>
                         <th onclick="sortTable('department')">Отдел</th>
                         <th>Тема</th>
-                        <th onclick="sortTable('priority')">Приоритет</th>
+                        <th onclick="sortTable('area')">Область</th>
                         <th onclick="sortTable('status')">Статус</th>
                         <th>Действия</th>
                     </tr>
@@ -769,7 +813,14 @@
                 document.getElementById('statInProgress').textContent = stats.in_progress_count || 0;
                 document.getElementById('statResolved').textContent = stats.resolved_count || 0;
                 document.getElementById('statClosed').textContent = stats.closed_count || 0;
-                document.getElementById('statCritical').textContent = stats.critical_count || 0;
+                document.getElementById('statQuality').textContent = stats.quality_count || 0;
+                document.getElementById('statCost').textContent = stats.cost_count || 0;
+                document.getElementById('statSales').textContent = stats.sales_count || 0;
+                document.getElementById('statDisorder').textContent = stats.disorder_count || 0;
+                document.getElementById('statHealth').textContent = stats.health_count || 0;
+                document.getElementById('statProductivity').textContent = stats.productivity_count || 0;
+                document.getElementById('statOverstock').textContent = stats.overstock_count || 0;
+                document.getElementById('statEnvironment').textContent = stats.environment_count || 0;
                 document.getElementById('statTotal').textContent = stats.total || 0;
             } catch (err) {
                 console.error('Ошибка загрузки статистики:', err);
@@ -803,7 +854,7 @@
                     <td>${escapeHtml(ticket.employee_name)}</td>
                     <td>${escapeHtml(ticket.department || '-')}</td>
                     <td>${escapeHtml(ticket.subject)}</td>
-                    <td><span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span></td>
+                    <td><span class="area-badge area-${ticket.area}">${getAreaName(ticket.area)}</span></td>
                     <td><span class="status-badge status-${ticket.status}">${getStatusName(ticket.status)}</span></td>
                     <td>
                         <button class="btn btn-sm" onclick="openTicket('${ticket.id}')">Открыть</button>
@@ -814,6 +865,20 @@
             document.getElementById('pageInfo').textContent = `Стр. ${currentPage}`;
             document.getElementById('prevBtn').disabled = currentPage <= 1;
             document.getElementById('nextBtn').disabled = tickets.length < limit;
+        }
+
+        function getAreaName(area) {
+            const names = {
+                quality: 'Качество',
+                cost: 'Стоимость',
+                sales: 'Продажи',
+                disorder: 'Беспорядок',
+                health: 'Безопасность',
+                productivity: 'Производительность',
+                overstock: 'Запасы',
+                environment: 'Среда'
+            };
+            return names[area] || area;
         }
 
         function getStatusName(status) {
@@ -836,7 +901,7 @@
             currentFilters = {
                 search: document.getElementById('searchInput').value,
                 status: document.getElementById('statusFilter').value,
-                priority: document.getElementById('priorityFilter').value
+                area: document.getElementById('areaFilter').value
             };
             currentPage = 1;
             loadTickets();

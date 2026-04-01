@@ -91,7 +91,7 @@ router.get('/', requireAuth, async (req, res) => {
       page = 1,
       limit = 20,
       status,
-      priority,
+      area,
       search,
       sortBy = 'created_at',
       sortOrder = 'DESC'
@@ -101,7 +101,7 @@ router.get('/', requireAuth, async (req, res) => {
       page: parseInt(page),
       limit: parseInt(limit),
       status,
-      priority,
+      area,
       search,
       sortBy,
       sortOrder

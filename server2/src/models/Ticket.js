@@ -15,19 +15,18 @@ class TicketModel {
       id,
       employee_name,
       employee_email,
-      employee_phone,
       department,
+      area,
       subject,
       description,
-      priority,
       created_at
     } = ticketData;
 
     const query = `
       INSERT INTO tickets (
-        id, employee_name, employee_email, employee_phone, department,
-        subject, description, priority, created_at, received_from_server1_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+        id, employee_name, employee_email, department,
+        area, subject, description, created_at, received_from_server1_at
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
       ON CONFLICT (id) DO NOTHING
       RETURNING *
     `;
@@ -36,11 +35,10 @@ class TicketModel {
       id,
       employee_name,
       employee_email,
-      employee_phone,
       department,
+      area,
       subject,
       description,
-      priority,
       created_at
     ];
 
@@ -125,7 +123,7 @@ class TicketModel {
       page = 1,
       limit = 20,
       status,
-      priority,
+      area,
       search,
       sortBy = 'created_at',
       sortOrder = 'DESC'
@@ -142,9 +140,9 @@ class TicketModel {
       paramIndex++;
     }
 
-    if (priority) {
-      query += ` AND priority = $${paramIndex}`;
-      values.push(priority);
+    if (area) {
+      query += ` AND area = $${paramIndex}`;
+      values.push(area);
       paramIndex++;
     }
 
@@ -254,14 +252,20 @@ class TicketModel {
   // Статистика
   static async getStats() {
     const query = `
-      SELECT 
+      SELECT
         COUNT(*) as total,
         COUNT(*) FILTER (WHERE status = 'new') as new_count,
         COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress_count,
         COUNT(*) FILTER (WHERE status = 'resolved') as resolved_count,
         COUNT(*) FILTER (WHERE status = 'closed') as closed_count,
-        COUNT(*) FILTER (WHERE priority = 'critical') as critical_count,
-        COUNT(*) FILTER (WHERE priority = 'high') as high_count
+        COUNT(*) FILTER (WHERE area = 'quality') as quality_count,
+        COUNT(*) FILTER (WHERE area = 'cost') as cost_count,
+        COUNT(*) FILTER (WHERE area = 'sales') as sales_count,
+        COUNT(*) FILTER (WHERE area = 'disorder') as disorder_count,
+        COUNT(*) FILTER (WHERE area = 'health') as health_count,
+        COUNT(*) FILTER (WHERE area = 'productivity') as productivity_count,
+        COUNT(*) FILTER (WHERE area = 'overstock') as overstock_count,
+        COUNT(*) FILTER (WHERE area = 'environment') as environment_count
       FROM tickets
     `;
     const result = await db.query(query);

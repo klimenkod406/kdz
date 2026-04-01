@@ -8,22 +8,21 @@ const { upload, uploadErrorHandler, UPLOAD_DIR } = require('../middleware/upload
 // POST /api/tickets - создание новой заявки с файлами
 router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res) => {
   try {
-    const { employee_name, employee_email, employee_phone, department, subject, description, priority } = req.body;
+    const { employee_name, employee_email, department, area, subject, description } = req.body;
 
     // Валидация
-    if (!employee_name || !subject || !description) {
-      return res.status(400).json({ error: 'Поля "Имя", "Тема" и "Описание" обязательны' });
+    if (!employee_name || !area || !subject || !description) {
+      return res.status(400).json({ error: 'Поля "Имя", "Область", "Тема" и "Описание" обязательны' });
     }
 
     // Создаём заявку
     const ticket = await TicketModel.create({
       employee_name,
       employee_email,
-      employee_phone,
       department,
+      area,
       subject,
-      description,
-      priority
+      description
     });
 
     // Обрабатываем файлы
