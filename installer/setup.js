@@ -3,7 +3,7 @@ const chalk = require('chalk');
 const { Client } = require('pg');
 const fs = require('fs-extra');
 const path = require('path');
-const { spawn } = require('child_process');
+const { spawn, exec } = require('child_process');
 
 // Цвета для вывода
 const colors = {
@@ -89,15 +89,19 @@ async function installDependencies(serverType) {
 
   return new Promise((resolve, reject) => {
     const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-    const install = spawn(npm, ['install'], {
-      cwd: serverPath,
-      stdio: 'pipe'
+    
+    const install = exec(`${npm} install`, {
+      cwd: serverPath
     });
 
-    let output = '';
-    
     install.stdout.on('data', (data) => {
-      output += data.toString();
+      const lines = data.toString().split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('npm')) {
+          console.log(colors.info(`  ${trimmed}`));
+        }
+      }
     });
 
     install.stderr.on('data', (data) => {
