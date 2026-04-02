@@ -71,6 +71,19 @@ class SyncService {
           sentCount++;
           console.log(`  ✓ Заявка ${ticket.id} отправлена (${attachments.length} файлов)`);
 
+          // Удаляем файлы после успешной отправки
+          if (attachments.length > 0) {
+            for (const attachment of attachments) {
+              const filePath = path.join(UPLOAD_DIR, attachment.file_name);
+              if (fs.existsSync(filePath)) {
+                fs.unlinkSync(filePath);
+                console.log(`    🗑️ Файл удалён: ${attachment.file_original_name}`);
+              }
+            }
+            // Удаляем записи о вложениях из БД
+            await TicketModel.deleteAttachments(ticket.id);
+          }
+
         } catch (err) {
           errorCount++;
           console.error(`  ✗ Ошибка отправки заявки ${ticket.id}: ${err.message}`);

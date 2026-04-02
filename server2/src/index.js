@@ -1,12 +1,14 @@
 const express = require('express');
 const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
+const morgan = require('morgan');
 const path = require('path');
 const db = require('./config/database');
 const AdminModel = require('./models/Admin');
 const authRouter = require('./routes/auth').router;
 const ticketsRouter = require('./routes/tickets');
 const { uploadErrorHandler } = require('./middleware/upload');
+const { logger, LOG_DIR } = require('./utils/logger');
 
 // Локальная копия shared утилит
 const { formatDate } = require('./utils');
@@ -20,6 +22,13 @@ const HOST = process.env.HOST || '0.0.0.0';
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Логирование HTTP запросов
+app.use(morgan('combined', {
+  stream: {
+    write: (message) => logger.info(message.trim(), { type: 'HTTP_REQUEST' })
+  }
+}));
 
 // Сессии с хранением в PostgreSQL
 app.use(session({

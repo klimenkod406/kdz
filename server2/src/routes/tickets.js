@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const path = require('path');
 const fs = require('fs');
+const archiver = require('archiver');
 const TicketModel = require('../models/Ticket');
 const { requireAuth } = require('./auth');
 const { upload, uploadErrorHandler, UPLOAD_DIR } = require('../middleware/upload');
+const { auditLog } = require('../utils/logger');
 
 // POST /api/tickets/sync - синхронизация с Server 1 (внутренний API)
 router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, res) => {
@@ -186,6 +188,57 @@ router.get('/:id/files/:filename', requireAuth, async (req, res) => {
   }
 });
 
+// POST /api/tickets/:id/files/download-all - скачать все файлы архивом (требуется авторизация)
+router.post('/:id/files/download-all', requireAuth, async (req, res) => {
+  try {
+    const ticketId = req.params.id;
+
+    // Проверяем существование заявки
+    const ticket = await TicketModel.findById(ticketId);
+    if (!ticket) {
+      return res.status(404).json({ error: 'Заявка не найдена' });
+    }
+
+    // Получаем вложения
+    const attachments = await TicketModel.getAttachments(ticketId);
+    if (attachments.length === 0) {
+      return res.status(404).json({ error: 'Нет вложений для скачивания' });
+    }
+
+    // Создаём ZIP архив
+    const archive = archiver('zip', {
+      zlib: { level: 9 } // Максимальное сжатие
+    });
+
+    // Настраиваем ответ
+    res.setHeader('Content-Type', 'application/zip');
+    res.setHeader('Content-Disposition', `attachment; filename="ticket-${ticketId.substring(0, 8)}-files.zip"`);
+
+    // Подключаем архив к ответу
+    archive.pipe(res);
+
+    // Добавляем файлы в архив
+    for (const attachment of attachments) {
+      const filePath = path.join(UPLOAD_DIR, attachment.file_name);
+      if (fs.existsSync(filePath)) {
+        // Добавляем файл в архив с оригинальным именем
+        archive.file(filePath, { name: attachment.file_original_name });
+      }
+    }
+
+    // Завершаем архив и логируем после успешной отправки
+    archive.on('end', () => {
+      auditLog.downloadFiles(ticketId, req.session.adminUsername, attachments.length, req.ip);
+    });
+
+    await archive.finalize();
+
+  } catch (err) {
+    console.error('Ошибка создания архива:', err);
+    res.status(500).json({ error: 'Ошибка создания архива' });
+  }
+});
+
 // PUT /api/tickets/:id/status - обновление статуса
 router.put('/:id/status', requireAuth, async (req, res) => {
   try {
@@ -196,6 +249,16 @@ router.put('/:id/status', requireAuth, async (req, res) => {
       req.session.adminId,
       comment
     );
+    
+    // Логируем изменение статуса
+    auditLog.statusChange(
+      req.params.id,
+      req.session.adminUsername,
+      ticket.status, // старый статус будет в истории
+      status,
+      req.ip
+    );
+    
     res.json({ success: true, ticket });
   } catch (err) {
     console.error('Ошибка обновления статуса:', err);
@@ -212,6 +275,14 @@ router.post('/:id/comments', requireAuth, async (req, res) => {
       req.session.adminId,
       comment
     );
+    
+    // Логируем добавление комментария
+    auditLog.addComment(
+      req.params.id,
+      req.session.adminUsername,
+      req.ip
+    );
+    
     res.json({ success: true, comment: result });
   } catch (err) {
     console.error('Ошибка добавления комментария:', err);

@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const AdminModel = require('../models/Admin');
+const { auditLog } = require('../utils/logger');
 
 // Middleware для проверки авторизации
 function requireAuth(req, res, next) {
@@ -16,16 +17,19 @@ router.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
+      auditLog.login(username, false, req.ip);
       return res.status(400).json({ error: 'Введите логин и пароль' });
     }
 
     const admin = await AdminModel.findByUsername(username);
     if (!admin) {
+      auditLog.login(username, false, req.ip);
       return res.status(401).json({ error: 'Неверный логин или пароль' });
     }
 
     const isValid = await AdminModel.verifyPassword(admin, password);
     if (!isValid) {
+      auditLog.login(username, false, req.ip);
       return res.status(401).json({ error: 'Неверный логин или пароль' });
     }
 
@@ -35,6 +39,9 @@ router.post('/login', async (req, res) => {
     // Создаем сессию
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
+
+    // Логируем успешный вход
+    auditLog.login(username, true, req.ip);
 
     res.json({
       success: true,
@@ -51,10 +58,18 @@ router.post('/login', async (req, res) => {
 
 // POST /api/auth/logout - выход
 router.post('/logout', (req, res) => {
+  const username = req.session.adminUsername;
+  
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ error: 'Ошибка выхода' });
     }
+    
+    // Логируем выход
+    if (username) {
+      auditLog.logout(username, req.ip);
+    }
+    
     res.json({ success: true });
   });
 });

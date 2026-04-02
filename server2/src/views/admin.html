@@ -234,8 +234,46 @@
         .area-environment { background: #e8f5e9; color: #388e3c; }
 
         .btn-sm {
-            padding: 5px 10px;
-            font-size: 12px;
+            padding: 6px 12px;
+            font-size: 13px;
+            border-radius: 4px;
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-sm:hover {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #ddd;
+            color: #666;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-outline:hover {
+            background: #f5f6fa;
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .stat-card {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
         }
 
         .pagination {
@@ -412,8 +450,15 @@
             border-top: 1px solid #eee;
         }
 
-        .attachments-section h3 {
+        .attachments-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 15px;
+        }
+
+        .attachments-header h3 {
+            margin: 0;
             color: #333;
         }
 
@@ -483,22 +528,47 @@
 
         .attachment-actions {
             display: flex;
-            gap: 5px;
+            gap: 6px;
             margin-top: 10px;
         }
 
         .attachment-actions .btn-sm {
             flex: 1;
-            padding: 6px 8px;
-            font-size: 11px;
+            padding: 8px 12px;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .btn-view {
-            background: #3498db;
+        .attachment-actions .btn-sm:hover {
+            background: #f5f6fa;
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
-        .btn-download {
-            background: #27ae60;
+        .attachment-actions .btn-view:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .attachment-actions .btn-download:hover {
+            background: #e8f5e9;
+            border-color: #4caf50;
+        }
+
+        .attachment-actions .btn-view {
+            color: #2196f3;
+        }
+
+        .attachment-actions .btn-download {
+            color: #4caf50;
         }
 
         /* Lightbox для просмотра */
@@ -597,19 +667,19 @@
     <div class="container">
         <!-- Статистика -->
         <div class="stats-grid">
-            <div class="stat-card new">
+            <div class="stat-card new" onclick="filterByStatus('new')">
                 <div class="stat-value" id="statNew">0</div>
                 <div class="stat-label">Новые</div>
             </div>
-            <div class="stat-card in_progress">
+            <div class="stat-card in_progress" onclick="filterByStatus('in_progress')">
                 <div class="stat-value" id="statInProgress">0</div>
                 <div class="stat-label">В работе</div>
             </div>
-            <div class="stat-card resolved">
+            <div class="stat-card resolved" onclick="filterByStatus('resolved')">
                 <div class="stat-value" id="statResolved">0</div>
                 <div class="stat-label">Решены</div>
             </div>
-            <div class="stat-card closed">
+            <div class="stat-card closed" onclick="filterByStatus('closed')">
                 <div class="stat-value" id="statClosed">0</div>
                 <div class="stat-label">Закрыты</div>
             </div>
@@ -620,13 +690,13 @@
             <div class="filters-row">
                 <div class="filter-group">
                     <label>Поиск</label>
-                    <input type="text" id="searchInput" placeholder="Поиск по тексту...">
+                    <input type="text" id="searchInput" placeholder="Поиск по тексту..." oninput="applyFilters()">
                 </div>
                 <div class="filter-group">
                     <label>Статус</label>
-                    <select id="statusFilter">
+                    <select id="statusFilter" onchange="applyFilters()">
                         <option value="">Все</option>
-                        <option value="new" selected>Новые</option>
+                        <option value="new">Новые</option>
                         <option value="in_progress">В работе</option>
                         <option value="resolved">Решены</option>
                         <option value="closed">Закрыты</option>
@@ -634,7 +704,7 @@
                 </div>
                 <div class="filter-group">
                     <label>Область</label>
-                    <select id="areaFilter">
+                    <select id="areaFilter" onchange="applyFilters()">
                         <option value="">Все</option>
                         <option value="quality">Качество продукта</option>
                         <option value="cost">Стоимость</option>
@@ -648,7 +718,7 @@
                 </div>
                 <div class="filter-group" style="flex: 0;">
                     <label>&nbsp;</label>
-                    <button class="btn" onclick="applyFilters()">Применить</button>
+                    <button class="btn-outline" onclick="resetFilters()">Сбросить</button>
                 </div>
             </div>
         </div>
@@ -664,10 +734,9 @@
                         <th>Тема</th>
                         <th onclick="sortTable('area')">Область</th>
                         <th onclick="sortTable('status')">Статус</th>
-                        <th>Действия</th>
                     </tr>
                 </thead>
-                <tbody id="ticketsBody">
+                <tbody id="ticketsBody" onclick="handleRowClick(event)">
                 </tbody>
             </table>
             <div class="pagination">
@@ -796,22 +865,24 @@
         function renderTickets(tickets) {
             const tbody = document.getElementById('ticketsBody');
             tbody.innerHTML = tickets.map(ticket => `
-                <tr>
+                <tr onclick="openTicket('${ticket.id}')" style="cursor: pointer;">
                     <td>${new Date(ticket.created_at).toLocaleString('ru-RU')}</td>
                     <td>${escapeHtml(ticket.employee_name)}</td>
                     <td>${escapeHtml(ticket.department || '-')}</td>
                     <td>${escapeHtml(ticket.subject)}</td>
                     <td><span class="area-badge area-${ticket.area}">${getAreaName(ticket.area)}</span></td>
                     <td><span class="status-badge status-${ticket.status}">${getStatusName(ticket.status)}</span></td>
-                    <td>
-                        <button class="btn btn-sm" onclick="openTicket('${ticket.id}')">Открыть</button>
-                    </td>
                 </tr>
             `).join('');
 
             document.getElementById('pageInfo').textContent = `Стр. ${currentPage}`;
             document.getElementById('prevBtn').disabled = currentPage <= 1;
             document.getElementById('nextBtn').disabled = tickets.length < limit;
+        }
+
+        function handleRowClick(event) {
+            // Предотвращаем дублирование событий
+            event.stopPropagation();
         }
 
         function getAreaName(area) {
@@ -852,6 +923,25 @@
             };
             currentPage = 1;
             loadTickets();
+        }
+
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('areaFilter').value = '';
+            currentFilters = {};
+            currentPage = 1;
+            loadTickets();
+        }
+
+        function filterByStatus(status) {
+            document.getElementById('statusFilter').value = status;
+            applyFilters();
+        }
+
+        function filterByArea(area) {
+            document.getElementById('areaFilter').value = area;
+            applyFilters();
         }
 
         function sortTable(field) {
@@ -904,17 +994,20 @@
             if (currentAttachments.length > 0) {
                 attachmentsHtml = `
                     <div class="attachments-section">
-                        <h3>📎 Вложения (${currentAttachments.length})</h3>
+                        <div class="attachments-header">
+                            <h3>📎 Вложения (${currentAttachments.length})</h3>
+                            <button class="btn btn-sm" onclick="downloadAllFiles('${ticket.id}')">📥 Скачать все файлы</button>
+                        </div>
                         <div class="attachments-grid">
                             ${currentAttachments.map((att, index) => {
                                 const fileType = getFileType(att.file_original_name);
                                 const fileUrl = '/uploads/' + att.file_name;
-                                const previewHtml = fileType === 'image' 
+                                const previewHtml = fileType === 'image'
                                     ? `<img src="${fileUrl}" alt="${escapeHtml(att.file_original_name)}">`
                                     : fileType === 'video'
                                     ? `<video src="${fileUrl}" preload="metadata"></video>`
                                     : `<div class="file-icon">${getFileIcon(att.file_original_name)}</div>`;
-                                
+
                                 return `
                                     <div class="attachment-item">
                                         <div class="attachment-preview" onclick="${fileType !== 'file' ? `openLightbox(${index})` : ''}" style="${fileType === 'file' ? '' : 'cursor: pointer'}">
@@ -1032,7 +1125,7 @@
             }
         }
 
-        async function addComment(ticketId) {
+        function addComment(ticketId) {
             const text = document.getElementById('commentText').value;
             if (!text.trim()) return;
 
@@ -1050,6 +1143,46 @@
                 }
             } catch (err) {
                 alert('Ошибка: ' + err.message);
+            }
+        }
+
+        // Скачать все файлы заявки
+        async function downloadAllFiles(ticketId) {
+            try {
+                const btn = event.target;
+                btn.disabled = true;
+                btn.textContent = '⏳ Подготовка...';
+
+                // Запрос на создание архива
+                const response = await fetch('/api/tickets/' + ticketId + '/files/download-all', {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error('Ошибка создания архива');
+                }
+
+                // Получаем blob с архивом
+                const blob = await response.blob();
+
+                // Создаём ссылку для скачивания
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ticket-${ticketId.substring(0, 8)}-files.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                btn.disabled = false;
+                btn.textContent = '📥 Скачать все файлы';
+
+            } catch (err) {
+                alert('Ошибка скачивания: ' + err.message);
+                const btn = event.target;
+                btn.disabled = false;
+                btn.textContent = '📥 Скачать все файлы';
             }
         }
 
