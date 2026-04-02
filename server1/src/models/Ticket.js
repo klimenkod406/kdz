@@ -100,18 +100,31 @@ class TicketModel {
     return result.rows[0];
   }
 
-  // Получение несентых заявок (старше указанного времени)
-  static async findNotSent(minutesAgo = 30) {
+  // Получение несентых заявок
+  static async findNotSent(minutesAgo = 0) {
     // Защита от SQL-инъекций - только числа
-    const minutes = parseInt(minutesAgo) || 30;
-    const query = `
-      SELECT * FROM tickets
-      WHERE sent_to_server2 = FALSE
-        AND created_at <= NOW() - INTERVAL '1 minute' * $1
-      ORDER BY created_at ASC
-    `;
-    const result = await db.query(query, [minutes]);
-    return result.rows;
+    const minutes = parseInt(minutesAgo) || 0;
+    
+    if (minutes === 0) {
+      // Отправлять все несентые заявки сразу
+      const query = `
+        SELECT * FROM tickets
+        WHERE sent_to_server2 = FALSE
+        ORDER BY created_at ASC
+      `;
+      const result = await db.query(query);
+      return result.rows;
+    } else {
+      // Отправлять заявки старше указанного времени
+      const query = `
+        SELECT * FROM tickets
+        WHERE sent_to_server2 = FALSE
+          AND created_at <= NOW() - INTERVAL '1 minute' * $1
+        ORDER BY created_at ASC
+      `;
+      const result = await db.query(query, [minutes]);
+      return result.rows;
+    }
   }
 
   // Отметка заявки как отправленной
