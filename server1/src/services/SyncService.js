@@ -1,7 +1,6 @@
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
-const FormData = require('form-data');
 const TicketModel = require('../models/Ticket');
 const db = require('../config/database');
 const { formatDate } = require('../utils');
@@ -35,33 +34,36 @@ class SyncService {
           // Получаем вложения заявки
           const attachments = await TicketModel.getAttachments(ticket.id);
 
-          // Создаём FormData для каждой заявки отдельно
-          const formData = new FormData();
-          formData.append('id', ticket.id);
-          formData.append('employee_name', ticket.employee_name);
-          formData.append('employee_email', ticket.employee_email || '');
-          formData.append('department', ticket.department || '');
-          formData.append('area', ticket.area);
-          formData.append('problem', ticket.problem);
-          formData.append('solution', ticket.solution || '');
-          formData.append('created_at', ticket.created_at);
-
-          // Добавляем файлы
-          for (let i = 0; i < attachments.length; i++) {
-            const attachment = attachments[i];
+          // Кодируем файлы в base64
+          const filesData = [];
+          for (const attachment of attachments) {
             const filePath = path.join(UPLOAD_DIR, attachment.file_name);
-
             if (fs.existsSync(filePath)) {
-              const fileStream = fs.createReadStream(filePath);
-              formData.append('files', fileStream, attachment.file_original_name);
+              const fileBuffer = fs.readFileSync(filePath);
+              filesData.push({
+                file_name: attachment.file_name,
+                file_original_name: attachment.file_original_name,
+                file_mime_type: attachment.file_mime_type,
+                file_size: attachment.file_size,
+                file_base64: fileBuffer.toString('base64')
+              });
             }
           }
 
-          // Отправляем заявку на Server 2
-          await axios.post(`${this.server2Url}/api/tickets/sync`, formData, {
-            headers: formData.getHeaders(),
-            maxBodyLength: Infinity,
-            maxContentLength: Infinity
+          // Отправляем заявку на Server 2 как JSON
+          await axios.post(`${this.server2Url}/api/tickets/sync`, {
+            id: ticket.id,
+            employee_name: ticket.employee_name,
+            employee_email: ticket.employee_email || '',
+            department: ticket.department || '',
+            area: ticket.area,
+            problem: ticket.problem,
+            solution: ticket.solution || '',
+            created_at: ticket.created_at,
+            files: filesData
+          }, {
+            headers: { 'Content-Type': 'application/json' },
+            maxBodyLength: Infinity
           });
 
           // Помечаем как отправленную

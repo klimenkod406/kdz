@@ -23,7 +23,7 @@ router.get('/sync/history', requireAuth, async (req, res) => {
 });
 
 // POST /api/tickets/sync - синхронизация с Server 1 (внутренний API)
-router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, res) => {
+router.post('/sync', async (req, res) => {
   try {
     const {
       id,
@@ -33,7 +33,8 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
       area,
       problem,
       solution,
-      created_at
+      created_at,
+      files
     } = req.body;
 
     // Создаём заявку
@@ -48,16 +49,29 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
       created_at
     });
 
-    // Обрабатываем файлы
+    // Обрабатываем файлы (base64)
     const attachments = [];
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
+    if (files && files.length > 0) {
+      for (const fileData of files) {
+        // Декодируем base64 и сохраняем файл
+        const fileBuffer = Buffer.from(fileData.file_base64, 'base64');
+        const filePath = path.join(UPLOAD_DIR, fileData.file_name);
+        
+        // Создаём директорию если нет
+        if (!fs.existsSync(UPLOAD_DIR)) {
+          fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+        }
+        
+        // Сохраняем файл
+        fs.writeFileSync(filePath, fileBuffer);
+        
+        // Добавляем запись в БД
         const attachment = await TicketModel.addAttachmentFromSync(id, {
-          file_name: file.filename,
-          file_original_name: file.originalname,
-          file_mime_type: file.mimetype,
-          file_size: file.size,
-          file_path: path.join('uploads', file.filename)
+          file_name: fileData.file_name,
+          file_original_name: fileData.file_original_name,
+          file_mime_type: fileData.file_mime_type,
+          file_size: fileData.file_size,
+          file_path: path.join('uploads', fileData.file_name)
         });
         attachments.push(attachment);
       }
@@ -70,15 +84,6 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
     });
   } catch (err) {
     console.error('Ошибка синхронизации:', err);
-    // Удаляем файлы если синхронизация не удалась
-    if (req.files) {
-      for (const file of req.files) {
-        const filePath = path.join(UPLOAD_DIR, file.filename);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-        }
-      }
-    }
     res.status(500).json({ error: 'Ошибка синхронизации' });
   }
 });
