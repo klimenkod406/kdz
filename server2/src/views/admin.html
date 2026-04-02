@@ -944,16 +944,31 @@
 
         function renderTickets(tickets) {
             const tbody = document.getElementById('ticketsBody');
-            tbody.innerHTML = tickets.map(ticket => `
-                <tr onclick="openTicket('${ticket.id}')" style="cursor: pointer;">
-                    <td>${new Date(ticket.created_at).toLocaleString('ru-RU')}</td>
-                    <td>${escapeHtml(ticket.employee_name)}</td>
-                    <td>${escapeHtml(ticket.department || '-')}</td>
-                    <td>${escapeHtml(ticket.problem).substring(0, 50)}${ticket.problem.length > 50 ? '...' : ''}</td>
-                    <td><span class="area-badge area-${ticket.area}">${getAreaName(ticket.area)}</span></td>
-                    <td><span class="status-badge status-${ticket.status}">${getStatusName(ticket.status)}</span></td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = tickets.map(ticket => {
+                // Парсим области из JSON
+                let areasHtml = '';
+                try {
+                    const areas = JSON.parse(ticket.areas);
+                    if (Array.isArray(areas)) {
+                        areasHtml = areas.map(area => 
+                            `<span class="area-badge area-${area}">${getAreaName(area)}</span>`
+                        ).join(' ');
+                    }
+                } catch (e) {
+                    areasHtml = '<span class="area-badge">-</span>';
+                }
+
+                return `
+                    <tr onclick="openTicket('${ticket.id}')" style="cursor: pointer;">
+                        <td>${new Date(ticket.created_at).toLocaleString('ru-RU')}</td>
+                        <td>${escapeHtml(ticket.employee_name)}</td>
+                        <td>${escapeHtml(ticket.department || '-')}</td>
+                        <td>${escapeHtml(ticket.problem).substring(0, 50)}${ticket.problem.length > 50 ? '...' : ''}</td>
+                        <td>${areasHtml}</td>
+                        <td><span class="status-badge status-${ticket.status}">${getStatusName(ticket.status)}</span></td>
+                    </tr>
+                `;
+            }).join('');
 
             document.getElementById('pageInfo').textContent = `Стр. ${currentPage}`;
             document.getElementById('prevBtn').disabled = currentPage <= 1;
@@ -977,6 +992,20 @@
                 environment: 'Среда'
             };
             return names[area] || area;
+        }
+
+        function parseAndDisplayAreas(areasJson) {
+            try {
+                const areas = JSON.parse(areasJson);
+                if (Array.isArray(areas) && areas.length > 0) {
+                    return areas.map(area => 
+                        `<span class="area-badge area-${area}">${getAreaName(area)}</span>`
+                    ).join(' ');
+                }
+                return '<span class="area-badge">-</span>';
+            } catch (e) {
+                return '<span class="area-badge">-</span>';
+            }
         }
 
         function getStatusName(status) {
@@ -1142,8 +1171,8 @@
                 <div class="ticket-section">
                     <h3>📝 Содержание заявки</h3>
                     <div class="ticket-detail">
-                        <label>Область</label>
-                        <value><span class="area-badge area-${ticket.area}">${getAreaName(ticket.area)}</span></value>
+                        <label>Области</label>
+                        <value id="ticketAreas">${parseAndDisplayAreas(ticket.areas)}</value>
                     </div>
                     <div class="ticket-detail">
                         <label>Проблема</label>

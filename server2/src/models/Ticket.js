@@ -254,19 +254,52 @@ class TicketModel {
         COUNT(*) FILTER (WHERE status = 'new') as new_count,
         COUNT(*) FILTER (WHERE status = 'in_progress') as in_progress_count,
         COUNT(*) FILTER (WHERE status = 'resolved') as resolved_count,
-        COUNT(*) FILTER (WHERE status = 'closed') as closed_count,
-        COUNT(*) FILTER (WHERE area = 'quality') as quality_count,
-        COUNT(*) FILTER (WHERE area = 'cost') as cost_count,
-        COUNT(*) FILTER (WHERE area = 'sales') as sales_count,
-        COUNT(*) FILTER (WHERE area = 'disorder') as disorder_count,
-        COUNT(*) FILTER (WHERE area = 'health') as health_count,
-        COUNT(*) FILTER (WHERE area = 'productivity') as productivity_count,
-        COUNT(*) FILTER (WHERE area = 'overstock') as overstock_count,
-        COUNT(*) FILTER (WHERE area = 'environment') as environment_count
+        COUNT(*) FILTER (WHERE status = 'closed') as closed_count
       FROM tickets
     `;
     const result = await db.query(query);
-    return result.rows[0];
+    const stats = result.rows[0];
+
+    // Подсчёт по областям (JSON массив)
+    const areaCounts = {
+      quality: 0,
+      cost: 0,
+      sales: 0,
+      disorder: 0,
+      health: 0,
+      productivity: 0,
+      overstock: 0,
+      environment: 0
+    };
+
+    // Получаем все заявки и считаем области
+    const allTickets = await db.query('SELECT areas FROM tickets');
+    for (const row of allTickets.rows) {
+      try {
+        const areas = JSON.parse(row.areas);
+        if (Array.isArray(areas)) {
+          for (const area of areas) {
+            if (areaCounts.hasOwnProperty(area)) {
+              areaCounts[area]++;
+            }
+          }
+        }
+      } catch (e) {
+        // Игнорируем ошибки парсинга
+      }
+    }
+
+    return {
+      ...stats,
+      quality_count: areaCounts.quality,
+      cost_count: areaCounts.cost,
+      sales_count: areaCounts.sales,
+      disorder_count: areaCounts.disorder,
+      health_count: areaCounts.health,
+      productivity_count: areaCounts.productivity,
+      overstock_count: areaCounts.overstock,
+      environment_count: areaCounts.environment
+    };
   }
 
   // Поиск заявок (для API)
