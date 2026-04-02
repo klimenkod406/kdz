@@ -208,14 +208,8 @@ async function askServer1Config() {
     {
       type: 'input',
       name: 'syncInterval',
-      message: 'Интервал синхронизации (минут):',
+      message: 'Через какой период отправлять заявки на Сервер 2 (минут):',
       default: '5'
-    },
-    {
-      type: 'input',
-      name: 'tempStorageMinutes',
-      message: 'Время хранения до отправки (минут):',
-      default: '30'
     }
   ]);
   return config;
@@ -357,7 +351,6 @@ async function createEnvFile(serverType, dbConfig, extraConfig, networkConfig) {
   if (serverType === 'server1') {
     envContent.SERVER2_URL = extraConfig.server2Url;
     envContent.SYNC_INTERVAL_MINUTES = extraConfig.syncInterval;
-    envContent.TEMP_STORAGE_MINUTES = extraConfig.tempStorageMinutes;
   } else if (serverType === 'server2') {
     envContent.SESSION_SECRET = extraConfig.sessionSecret;
     envContent.ADMIN_USERNAME = extraConfig.adminUsername;
@@ -484,7 +477,7 @@ async function main() {
       console.log('  Особенности:');
       console.log('  ✓ Загрузка файлов (фото, видео, документы)');
       console.log('  ✓ Автоматическая синхронизация с Server 2');
-      console.log(`  ✓ Интервал синхронизации: ${extraConfig.syncInterval} мин`);
+      console.log(`  ✓ Отправка каждые: ${extraConfig.syncInterval} мин`);
     } else if (serverType === 'server2') {
       console.log(colors.success('💾 Сервер 2 (Хранение и админ-панель) готов к работе!'));
       console.log('');

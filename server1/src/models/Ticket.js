@@ -128,12 +128,14 @@ class TicketModel {
 
   // Удаление старых отправленных заявок
   static async deleteOldSent(daysOld = 7) {
+    // Защита от SQL-инъекций - только числа
+    const days = parseInt(daysOld) || 7;
     const query = `
       DELETE FROM tickets
       WHERE sent_to_server2 = TRUE
-        AND sent_at <= NOW() - INTERVAL '${daysOld} days'
+        AND sent_at <= NOW() - INTERVAL '1 day' * $1
     `;
-    const result = await db.query(query);
+    const result = await db.query(query, [days]);
     return result.rowCount;
   }
 

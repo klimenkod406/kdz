@@ -17,9 +17,8 @@ class SyncService {
     console.log(`[${formatDate(new Date())}] Начало синхронизации с ${this.server2Url}`);
     
     try {
-      // Получаем несентые заявки (старше 30 минут)
-      const tempStorageMinutes = process.env.TEMP_STORAGE_MINUTES || 30;
-      const tickets = await TicketModel.findNotSent(tempStorageMinutes);
+      // Получаем все несентые заявки
+      const tickets = await TicketModel.findNotSent(0); // 0 = отправлять сразу все
 
       if (tickets.length === 0) {
         console.log(`[${formatDate(new Date())}] Нет заявок для отправки`);
@@ -83,6 +82,14 @@ class SyncService {
 
       console.log(`[${formatDate(new Date())}] Синхронизация завершена: ${sentCount} успешно, ${errorCount} ошибок`);
 
+      // Удаляем старые отправленные заявки (старше 7 дней)
+      if (sentCount > 0) {
+        const deletedCount = await this.cleanupOldTickets();
+        if (deletedCount > 0) {
+          console.log(`[${formatDate(new Date())}] Удалено старых заявок: ${deletedCount}`);
+        }
+      }
+
       return { success: errorCount === 0, sent: sentCount, errors: errorCount };
 
     } catch (err) {
@@ -99,6 +106,17 @@ class SyncService {
       VALUES ($1, $2, $3)
     `;
     await db.query(query, [ticketsCount, success, errorMessage]);
+  }
+
+  // Удаление старых отправленных заявок
+  async cleanupOldTickets(daysOld = 7) {
+    try {
+      const result = await TicketModel.deleteOldSent(daysOld);
+      return result;
+    } catch (err) {
+      console.error(`[${formatDate(new Date())}] Ошибка очистки старых заявок:`, err.message);
+      return 0;
+    }
   }
 
   // Получение истории синхронизаций

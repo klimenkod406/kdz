@@ -13,11 +13,10 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
       id,
       employee_name,
       employee_email,
-      employee_phone,
       department,
+      area,
       subject,
       description,
-      priority,
       created_at,
       attachments_count
     } = req.body;
@@ -27,11 +26,10 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
       id,
       employee_name,
       employee_email,
-      employee_phone,
       department,
+      area,
       subject,
       description,
-      priority,
       created_at
     });
 

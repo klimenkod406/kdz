@@ -958,8 +958,8 @@
                     <value style="white-space: pre-wrap;">${escapeHtml(ticket.description)}</value>
                 </div>
                 <div class="ticket-detail">
-                    <label>Приоритет</label>
-                    <value><span class="priority-badge priority-${ticket.priority}">${ticket.priority}</span></value>
+                    <label>Область</label>
+                    <value><span class="area-badge area-${ticket.area}">${getAreaName(ticket.area)}</span></value>
                 </div>
                 <div class="ticket-detail">
                     <label>Статус</label>
