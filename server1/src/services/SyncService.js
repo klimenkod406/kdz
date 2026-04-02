@@ -60,8 +60,8 @@ class SyncService {
           // Отправляем заявку на Server 2
           await axios.post(`${this.server2Url}/api/tickets/sync`, formData, {
             headers: {
-              ...formData.getHeaders(),
-              'Content-Length': formData.getLengthSync()
+              ...formData.getHeaders()
+              // Content-Length будет вычислен автоматически
             },
             maxBodyLength: Infinity,
             maxContentLength: Infinity
