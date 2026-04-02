@@ -25,7 +25,6 @@
 Request:
 {
   "username": "admin",
-  "password": "admin123"
 }
 
 Response (200):
