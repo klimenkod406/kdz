@@ -1216,7 +1216,7 @@
                                     }
                                     
                                     return `
-                                        <div class="attachment-item" onclick="${isImage || isVideo ? `openLightbox(${index})` : ''}" style="${isImage || isVideo ? 'cursor: pointer;' : ''}">
+                                        <div class="attachment-item" onclick="openLightbox(${index})" style="cursor: pointer;">
                                             <div class="attachment-preview">
                                                 ${previewHtml}
                                             </div>
@@ -1438,27 +1438,35 @@
         // Lightbox функции
         function openLightbox(index) {
             if (!currentAttachments || currentAttachments.length === 0) return;
-            
+
             currentAttachmentIndex = index;
             const lightbox = document.getElementById('lightbox');
             const lightboxMedia = document.getElementById('lightboxMedia');
             const lightboxInfo = document.getElementById('lightboxInfo');
-            
+
             const attachment = currentAttachments[index];
             const fileType = getFileType(attachment.file_original_name);
             const fileUrl = '/uploads/' + attachment.file_name;
-            
+
             if (fileType === 'image') {
-                lightboxMedia.innerHTML = `<img src="${fileUrl}" alt="${escapeHtml(attachment.file_original_name)}">`;
+                lightboxMedia.innerHTML = `<img src="${fileUrl}" alt="${escapeHtml(attachment.file_original_name)}" style="max-width:100%;max-height:90vh;object-fit:contain;">`;
             } else if (fileType === 'video') {
-                lightboxMedia.innerHTML = `<video src="${fileUrl}" controls autoplay></video>`;
+                lightboxMedia.innerHTML = `<video src="${fileUrl}" controls autoplay style="max-width:100%;max-height:90vh;"></video>`;
             } else {
-                return; // Не открываем для файлов
+                // Для файлов показываем большую иконку
+                const icon = getFileIcon(attachment.file_original_name);
+                lightboxMedia.innerHTML = `
+                    <div style="text-align:center;padding:40px;">
+                        <div style="font-size:120px;margin-bottom:20px;">${icon}</div>
+                        <div style="font-size:18px;color:#333;margin-bottom:10px;">${escapeHtml(attachment.file_original_name)}</div>
+                        <div style="font-size:14px;color:#666;">${formatFileSize(attachment.file_size)}</div>
+                    </div>
+                `;
             }
-            
+
             lightboxInfo.textContent = `${attachment.file_original_name} (${formatFileSize(attachment.file_size)}) - ${index + 1} из ${currentAttachments.length}`;
             lightbox.classList.add('active');
-            
+
             // Блокируем прокрутку страницы
             document.body.style.overflow = 'hidden';
         }
