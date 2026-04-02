@@ -312,11 +312,18 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.5);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
             display: none;
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 2000;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .modal-overlay.active {
@@ -325,75 +332,117 @@
 
         .modal {
             background: white;
-            border-radius: 10px;
+            border-radius: 12px;
             width: 90%;
-            max-width: 800px;
+            max-width: 900px;
             max-height: 90vh;
             overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .modal-header {
-            padding: 20px;
-            border-bottom: 1px solid #eee;
+            padding: 24px 32px;
+            border-bottom: 1px solid #e0e0e0;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
 
         .modal-header h2 {
-            font-size: 18px;
-            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin: 0;
         }
 
         .modal-close {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 28px;
             cursor: pointer;
             color: #666;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: #f5f5f5;
+            color: #1a1a1a;
         }
 
         .modal-body {
-            padding: 20px;
+            padding: 32px;
+        }
+
+        .ticket-section {
+            margin-bottom: 32px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .ticket-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .section-header {
+            margin-bottom: 16px;
+        }
+
+        .section-header h3 {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .ticket-detail {
             margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
         }
 
         .ticket-detail:last-child {
-            border-bottom: none;
+            margin-bottom: 0;
         }
 
         .ticket-detail label {
             font-size: 12px;
-            color: #666;
-            margin-bottom: 3px;
-            font-weight: 600;
+            color: #888;
+            margin-bottom: 6px;
+            font-weight: 500;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
         .ticket-detail value {
             display: block;
-            color: #333;
-            margin-bottom: 15px;
-        }
-
-        .ticket-section {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-
-        .ticket-section h3 {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            font-weight: 600;
+            color: #1a1a1a;
+            font-size: 15px;
+            line-height: 1.6;
         }
 
         .status-actions {
@@ -727,6 +776,34 @@
             text-align: center;
             color: white;
             font-size: 14px;
+        }
+
+        /* Download all button */
+        .download-all-container {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 2px solid #f0f0f0;
+            text-align: center;
+        }
+
+        .btn-download-all {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-download-all:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
         }
     </style>
 </head>
@@ -1102,37 +1179,45 @@
             let attachmentsHtml = '';
             if (currentAttachments.length > 0) {
                 // Группируем по типам
-                const photos = currentAttachments.filter(a => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(a.file_mime_type));
-                const videos = currentAttachments.filter(a => ['video/mp4', 'video/webm', 'video/quicktime'].includes(a.file_mime_type));
+                const photos = currentAttachments.filter(a => 
+                    a.file_mime_type && ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'].includes(a.file_mime_type)
+                );
+                const videos = currentAttachments.filter(a => 
+                    a.file_mime_type && ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'].includes(a.file_mime_type)
+                );
                 const files = currentAttachments.filter(a => !photos.includes(a) && !videos.includes(a));
 
                 const renderGroup = (items, title, icon) => {
                     if (items.length === 0) return '';
                     return `
                         <div class="ticket-section">
-                            <h3>${icon} ${title} (${items.length})</h3>
+                            <div class="section-header">
+                                <h3>${icon} ${title} (${items.length})</h3>
+                            </div>
                             <div class="attachments-grid">
                                 ${items.map((att, index) => {
                                     const fileType = getFileType(att.file_original_name);
                                     const fileUrl = '/uploads/' + att.file_name;
-                                    const previewHtml = fileType === 'image' 
-                                        ? `<img src="${fileUrl}" alt="${escapeHtml(att.file_original_name)}">`
-                                        : fileType === 'video'
-                                        ? `<video src="${fileUrl}" preload="metadata"></video>`
-                                        : `<div class="file-icon">${getFileIcon(att.file_original_name)}</div>`;
+                                    const isImage = fileType === 'image';
+                                    const isVideo = fileType === 'video';
+                                    
+                                    let previewHtml = '';
+                                    if (isImage) {
+                                        previewHtml = `<img src="${fileUrl}" alt="${escapeHtml(att.file_original_name)}" loading="lazy">`;
+                                    } else if (isVideo) {
+                                        previewHtml = `<video src="${fileUrl}" preload="metadata" onloadedmetadata="this.style.display='block'"></video>`;
+                                    } else {
+                                        previewHtml = `<div class="file-icon">${getFileIcon(att.file_original_name)}</div>`;
+                                    }
                                     
                                     return `
-                                        <div class="attachment-item">
-                                            <div class="attachment-preview" onclick="${fileType !== 'file' ? `openLightbox(${index})` : ''}" style="${fileType === 'file' ? '' : 'cursor: pointer'}">
+                                        <div class="attachment-item" onclick="${isImage || isVideo ? `openLightbox(${index})` : ''}" style="${isImage || isVideo ? 'cursor: pointer;' : ''}">
+                                            <div class="attachment-preview">
                                                 ${previewHtml}
                                             </div>
                                             <div class="attachment-info">
                                                 <div class="attachment-name" title="${escapeHtml(att.file_original_name)}">${escapeHtml(att.file_original_name)}</div>
                                                 <div class="attachment-size">${formatFileSize(att.file_size)}</div>
-                                                <div class="attachment-actions">
-                                                    <button class="btn btn-sm btn-view" onclick="openLightbox(${index})">👁️</button>
-                                                    <a href="/api/tickets/${ticket.id}/files/${att.file_name}" class="btn btn-sm btn-download" download>⬇️</a>
-                                                </div>
                                             </div>
                                         </div>
                                     `;
@@ -1147,6 +1232,11 @@
                         ${renderGroup(photos, 'Фотографии', '📷')}
                         ${renderGroup(videos, 'Видео', '🎬')}
                         ${renderGroup(files, 'Файлы', '📁')}
+                        <div class="download-all-container">
+                            <button class="btn-download-all" onclick="downloadAllFiles('${ticket.id}', event)">
+                                📥 Скачать все файлы (${currentAttachments.length})
+                            </button>
+                        </div>
                     </div>
                 `;
             }
