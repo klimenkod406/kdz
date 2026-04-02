@@ -63,7 +63,9 @@ class SyncService {
             files: filesData
           }, {
             headers: { 'Content-Type': 'application/json' },
-            maxBodyLength: Infinity
+            maxBodyLength: 100 * 1024 * 1024,  // 100MB
+            maxContentLength: 100 * 1024 * 1024,  // 100MB
+            timeout: 120000  // 120 секунд
           });
 
           // Помечаем как отправленную
