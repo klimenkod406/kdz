@@ -50,10 +50,10 @@ class SyncService {
           for (let i = 0; i < attachments.length; i++) {
             const attachment = attachments[i];
             const filePath = path.join(UPLOAD_DIR, attachment.file_name);
-            
+
             if (fs.existsSync(filePath)) {
-              const fileStream = fs.createReadStream(filePath);
-              formData.append(`files`, fileStream, attachment.file_original_name);
+              // Используем form-data.append с потоком
+              formData.append('files', fs.createReadStream(filePath), attachment.file_original_name);
             }
           }
 
