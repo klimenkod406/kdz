@@ -471,9 +471,6 @@ async function main() {
       console.log('  Форма подачи заявок:');
       console.log(`  http://localhost:${networkConfig.port}`);
       console.log('');
-      console.log('  Статус синхронизации:');
-      console.log(`  http://localhost:${networkConfig.port}/status`);
-      console.log('');
       console.log('  Особенности:');
       console.log('  ✓ Загрузка файлов (фото, видео, документы)');
       console.log('  ✓ Автоматическая синхронизация с Server 2');

@@ -4,7 +4,6 @@ const cron = require('node-cron');
 const path = require('path');
 const SyncService = require('./services/SyncService');
 const ticketsRouter = require('./routes/tickets');
-const syncRouter = require('./routes/sync');
 const { uploadErrorHandler } = require('./middleware/upload');
 
 // Локальная копия shared утилит
@@ -27,16 +26,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Маршруты
 app.use('/api/tickets', ticketsRouter);
-app.use('/api/sync', syncRouter);
 
 // Главная страница - форма подачи заявки
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'index.html'));
-});
-
-// Страница статуса
-app.get('/status', (req, res) => {
-  res.sendFile(path.join(__dirname, 'views', 'status.html'));
 });
 
 // Инициализация синхронизации

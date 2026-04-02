@@ -359,12 +359,20 @@
 
         .ticket-detail {
             margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .ticket-detail:last-child {
+            border-bottom: none;
         }
 
         .ticket-detail label {
             font-size: 12px;
             color: #666;
             margin-bottom: 3px;
+            font-weight: 600;
+            text-transform: uppercase;
         }
 
         .ticket-detail value {
@@ -373,11 +381,81 @@
             margin-bottom: 15px;
         }
 
+        .ticket-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .ticket-section h3 {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
         .status-actions {
             display: flex;
             gap: 10px;
             margin-top: 20px;
             flex-wrap: wrap;
+        }
+
+        .status-actions .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .status-actions .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .status-actions .btn[onclick*="new"] {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-actions .btn[onclick*="new"]:hover {
+            background: #bbdefb;
+            border-color: #1976d2;
+        }
+
+        .status-actions .btn[onclick*="in_progress"] {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-actions .btn[onclick*="in_progress"]:hover {
+            background: #ffe0b2;
+            border-color: #f57c00;
+        }
+
+        .status-actions .btn[onclick*="resolved"] {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .status-actions .btn[onclick*="resolved"]:hover {
+            background: #c8e6c9;
+            border-color: #388e3c;
+        }
+
+        .status-actions .btn[onclick*="closed"] {
+            background: #f5f5f5;
+            color: #757575;
+        }
+
+        .status-actions .btn[onclick*="closed"]:hover {
+            background: #eeeeee;
+            border-color: #757575;
         }
 
         .comments-section {
@@ -464,27 +542,29 @@
 
         .attachments-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
             margin-bottom: 20px;
         }
 
         .attachment-item {
-            background: #f8f9fa;
+            background: white;
             border-radius: 8px;
             overflow: hidden;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            border: 1px solid #e0e0e0;
         }
 
         .attachment-item:hover {
             transform: translateY(-3px);
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border-color: #667eea;
         }
 
         .attachment-preview {
             width: 100%;
-            height: 150px;
+            height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -505,31 +585,31 @@
         }
 
         .attachment-preview .file-icon {
-            font-size: 48px;
+            font-size: 40px;
         }
 
         .attachment-info {
-            padding: 12px;
+            padding: 10px;
         }
 
         .attachment-name {
-            font-size: 12px;
+            font-size: 11px;
             color: #333;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .attachment-size {
-            font-size: 11px;
+            font-size: 10px;
             color: #999;
         }
 
         .attachment-actions {
             display: flex;
-            gap: 6px;
-            margin-top: 10px;
+            gap: 4px;
+            margin-top: 8px;
         }
 
         .attachment-actions .btn-sm {
@@ -989,91 +1069,118 @@
             currentAttachments = ticket.attachments || [];
             currentAttachmentIndex = 0;
 
-            // Рендерим вложения
+            // Рендерим вложения с группировкой
             let attachmentsHtml = '';
             if (currentAttachments.length > 0) {
-                attachmentsHtml = `
-                    <div class="attachments-section">
-                        <div class="attachments-header">
-                            <h3>📎 Вложения (${currentAttachments.length})</h3>
-                            <button class="btn btn-sm" onclick="downloadAllFiles('${ticket.id}', event)">📥 Скачать все файлы</button>
-                        </div>
-                        <div class="attachments-grid">
-                            ${currentAttachments.map((att, index) => {
-                                const fileType = getFileType(att.file_original_name);
-                                const fileUrl = '/uploads/' + att.file_name;
-                                const previewHtml = fileType === 'image'
-                                    ? `<img src="${fileUrl}" alt="${escapeHtml(att.file_original_name)}">`
-                                    : fileType === 'video'
-                                    ? `<video src="${fileUrl}" preload="metadata"></video>`
-                                    : `<div class="file-icon">${getFileIcon(att.file_original_name)}</div>`;
+                // Группируем по типам
+                const photos = currentAttachments.filter(a => ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(a.file_mime_type));
+                const videos = currentAttachments.filter(a => ['video/mp4', 'video/webm', 'video/quicktime'].includes(a.file_mime_type));
+                const files = currentAttachments.filter(a => !photos.includes(a) && !videos.includes(a));
 
-                                return `
-                                    <div class="attachment-item">
-                                        <div class="attachment-preview" onclick="${fileType !== 'file' ? `openLightbox(${index})` : ''}" style="${fileType === 'file' ? '' : 'cursor: pointer'}">
-                                            ${previewHtml}
-                                        </div>
-                                        <div class="attachment-info">
-                                            <div class="attachment-name" title="${escapeHtml(att.file_original_name)}">${escapeHtml(att.file_original_name)}</div>
-                                            <div class="attachment-size">${formatFileSize(att.file_size)}</div>
-                                            <div class="attachment-actions">
-                                                <button class="btn btn-sm btn-view" onclick="openLightbox(${index})">👁️</button>
-                                                <a href="/api/tickets/${ticket.id}/files/${att.file_name}" class="btn btn-sm btn-download" download>⬇️</a>
+                const renderGroup = (items, title, icon) => {
+                    if (items.length === 0) return '';
+                    return `
+                        <div class="ticket-section">
+                            <h3>${icon} ${title} (${items.length})</h3>
+                            <div class="attachments-grid">
+                                ${items.map((att, index) => {
+                                    const fileType = getFileType(att.file_original_name);
+                                    const fileUrl = '/uploads/' + att.file_name;
+                                    const previewHtml = fileType === 'image' 
+                                        ? `<img src="${fileUrl}" alt="${escapeHtml(att.file_original_name)}">`
+                                        : fileType === 'video'
+                                        ? `<video src="${fileUrl}" preload="metadata"></video>`
+                                        : `<div class="file-icon">${getFileIcon(att.file_original_name)}</div>`;
+                                    
+                                    return `
+                                        <div class="attachment-item">
+                                            <div class="attachment-preview" onclick="${fileType !== 'file' ? `openLightbox(${index})` : ''}" style="${fileType === 'file' ? '' : 'cursor: pointer'}">
+                                                ${previewHtml}
+                                            </div>
+                                            <div class="attachment-info">
+                                                <div class="attachment-name" title="${escapeHtml(att.file_original_name)}">${escapeHtml(att.file_original_name)}</div>
+                                                <div class="attachment-size">${formatFileSize(att.file_size)}</div>
+                                                <div class="attachment-actions">
+                                                    <button class="btn btn-sm btn-view" onclick="openLightbox(${index})">👁️</button>
+                                                    <a href="/api/tickets/${ticket.id}/files/${att.file_name}" class="btn btn-sm btn-download" download>⬇️</a>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                `;
-                            }).join('')}
+                                    `;
+                                }).join('')}
+                            </div>
                         </div>
+                    `;
+                };
+
+                attachmentsHtml = `
+                    <div class="attachments-section">
+                        ${renderGroup(photos, 'Фотографии', '📷')}
+                        ${renderGroup(videos, 'Видео', '🎬')}
+                        ${renderGroup(files, 'Файлы', '📁')}
                     </div>
                 `;
             }
 
             modalBody.innerHTML = `
-                <div class="ticket-detail">
-                    <label>ID заявки</label>
-                    <value>${ticket.id}</value>
-                </div>
-                <div class="ticket-detail">
-                    <label>Сотрудник</label>
-                    <value>${escapeHtml(ticket.employee_name)} (${escapeHtml(ticket.employee_email || 'нет email')})</value>
-                </div>
-                <div class="ticket-detail">
-                    <label>Отдел</label>
-                    <value>${escapeHtml(ticket.department || '-')}</value>
-                </div>
-                <div class="ticket-detail">
-                    <label>Проблема</label>
-                    <value style="white-space: pre-wrap;">${escapeHtml(ticket.problem)}</value>
-                </div>
-                <div class="ticket-detail">
-                    <label>Решение</label>
-                    <value style="white-space: pre-wrap;">${escapeHtml(ticket.solution || 'Не указано')}</value>
-                </div>
-                <div class="ticket-detail">
-                    <label>Область</label>
-                    <value><span class="area-badge area-${ticket.area}">${getAreaName(ticket.area)}</span></value>
-                </div>
-                <div class="ticket-detail">
-                    <label>Статус</label>
-                    <value><span class="status-badge status-${ticket.status}">${getStatusName(ticket.status)}</span></value>
-                </div>
-                <div class="ticket-detail">
-                    <label>Создана</label>
-                    <value>${ticket.created_at ? new Date(ticket.created_at).toLocaleString('ru-RU') : 'Неизвестно'}</value>
+                <div class="ticket-section">
+                    <h3>📋 Основная информация</h3>
+                    <div class="ticket-detail">
+                        <label>ID заявки</label>
+                        <value>${ticket.id}</value>
+                    </div>
+                    <div class="ticket-detail">
+                        <label>Сотрудник</label>
+                        <value>${escapeHtml(ticket.employee_name)} (${escapeHtml(ticket.employee_email || 'нет email')})</value>
+                    </div>
+                    <div class="ticket-detail">
+                        <label>Отдел</label>
+                        <value>${escapeHtml(ticket.department || '-')}</value>
+                    </div>
                 </div>
 
-                <div class="status-actions">
-                    <button class="btn" onclick="changeStatus('${ticket.id}', 'new')">Новая</button>
-                    <button class="btn" onclick="changeStatus('${ticket.id}', 'in_progress')">В работу</button>
-                    <button class="btn" onclick="changeStatus('${ticket.id}', 'resolved')">Решена</button>
-                    <button class="btn" onclick="changeStatus('${ticket.id}', 'closed')">Закрыта</button>
+                <div class="ticket-section">
+                    <h3>📝 Содержание заявки</h3>
+                    <div class="ticket-detail">
+                        <label>Область</label>
+                        <value><span class="area-badge area-${ticket.area}">${getAreaName(ticket.area)}</span></value>
+                    </div>
+                    <div class="ticket-detail">
+                        <label>Проблема</label>
+                        <value style="white-space: pre-wrap;">${escapeHtml(ticket.problem)}</value>
+                    </div>
+                    <div class="ticket-detail">
+                        <label>Решение</label>
+                        <value style="white-space: pre-wrap;">${escapeHtml(ticket.solution || 'Не указано')}</value>
+                    </div>
+                </div>
+
+                <div class="ticket-section">
+                    <h3>🏷️ Статус и дата</h3>
+                    <div class="ticket-detail">
+                        <label>Статус</label>
+                        <value><span class="status-badge status-${ticket.status}">${getStatusName(ticket.status)}</span></value>
+                    </div>
+                    <div class="ticket-detail">
+                        <label>Создана</label>
+                        <value>${ticket.created_at ? new Date(ticket.created_at).toLocaleString('ru-RU') : 'Неизвестно'}</value>
+                    </div>
+                </div>
+
+                <div class="ticket-section">
+                    <h3>⚙️ Действия</h3>
+                    <div class="status-actions">
+                        <button class="btn" onclick="changeStatus('${ticket.id}', 'new')">🆕 Новая</button>
+                        <button class="btn" onclick="changeStatus('${ticket.id}', 'in_progress')">⏳ В работу</button>
+                        <button class="btn" onclick="changeStatus('${ticket.id}', 'resolved')">✅ Решена</button>
+                        <button class="btn" onclick="changeStatus('${ticket.id}', 'closed')">🔒 Закрыта</button>
+                    </div>
                 </div>
 
                 ${attachmentsHtml}
 
                 <div class="comments-section">
-                    <h3>Комментарии</h3>
+                    <h3>💬 Комментарии</h3>
                     ${comments.map(c => `
                         <div class="comment">
                             <div class="comment-header">
@@ -1090,8 +1197,8 @@
                 </div>
 
                 ${history.length > 0 ? `
-                <div class="history-section">
-                    <h3>История изменений</h3>
+                <div class="ticket-section">
+                    <h3>📜 История изменений</h3>
                     ${history.map(h => `
                         <div class="history-item">
                             <strong>${new Date(h.created_at).toLocaleString('ru-RU')}</strong><br>

@@ -17,9 +17,11 @@ const storage = multer.diskStorage({
     cb(null, UPLOAD_DIR);
   },
   filename: function (req, file, cb) {
-    // Генерируем уникальное имя файла
-    const ext = path.extname(file.originalname);
-    const filename = generateUUID() + ext;
+    // Генерируем уникальное имя с правильным расширением
+    const ext = path.extname(file.originalname).toLowerCase();
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    const filename = `file_${timestamp}_${random}${ext}`;
     cb(null, filename);
   }
 });
