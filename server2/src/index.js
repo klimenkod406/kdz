@@ -69,6 +69,11 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'views', 'admin.html'));
 });
 
+// Статистика синхронизации
+app.get('/sync-status', (req, res) => {
+  res.sendFile(path.join(__dirname, 'views', 'sync-status.html'));
+});
+
 // Обработка 404
 app.use((req, res) => {
   res.status(404).json({ error: 'Страница не найдена' });

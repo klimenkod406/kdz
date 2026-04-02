@@ -40,6 +40,14 @@ router.post('/login', async (req, res) => {
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
 
+    // Сохраняем сессию в БД перед отправкой ответа
+    await new Promise((resolve, reject) => {
+      req.session.save((err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
     // Логируем успешный вход
     auditLog.login(username, true, req.ip);
 

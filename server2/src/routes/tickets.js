@@ -3,10 +3,24 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const archiver = require('archiver');
+const db = require('../config/database');
 const TicketModel = require('../models/Ticket');
 const { requireAuth } = require('./auth');
 const { upload, uploadErrorHandler, UPLOAD_DIR } = require('../middleware/upload');
 const { auditLog } = require('../utils/logger');
+
+// GET /api/sync/history - история синхронизаций
+router.get('/sync/history', requireAuth, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit) || 50;
+    const query = 'SELECT * FROM sync_logs ORDER BY created_at DESC LIMIT $1';
+    const result = await db.query(query, [limit]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Ошибка получения истории:', err);
+    res.status(500).json({ error: 'Ошибка получения истории' });
+  }
+});
 
 // POST /api/tickets/sync - синхронизация с Server 1 (внутренний API)
 router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, res) => {

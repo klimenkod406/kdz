@@ -75,3 +75,13 @@ CREATE INDEX IF NOT EXISTS idx_tickets_created_at ON tickets(created_at);
 CREATE INDEX IF NOT EXISTS idx_tickets_area ON tickets(area);
 CREATE INDEX IF NOT EXISTS idx_ticket_comments_ticket_id ON ticket_comments(ticket_id);
 CREATE INDEX IF NOT EXISTS idx_ticket_history_ticket_id ON ticket_history(ticket_id);
+
+-- Таблица логов синхронизации (для статистики)
+CREATE TABLE IF NOT EXISTS sync_logs (
+    id SERIAL PRIMARY KEY,
+    tickets_count INTEGER DEFAULT 0,
+    success BOOLEAN DEFAULT FALSE,
+    error_message TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_sync_logs_created_at ON sync_logs(created_at DESC);

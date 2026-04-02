@@ -1060,7 +1060,7 @@
                 </div>
                 <div class="ticket-detail">
                     <label>Создана</label>
-                    <value>${new Date(ticket.created_at).toLocaleString('ru-RU')}</value>
+                    <value>${ticket.created_at ? new Date(ticket.created_at).toLocaleString('ru-RU') : 'Неизвестно'}</value>
                 </div>
 
                 <div class="status-actions">

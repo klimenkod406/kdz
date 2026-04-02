@@ -44,6 +44,7 @@ class SyncService {
           formData.append('area', ticket.area);
           formData.append('problem', ticket.problem);
           formData.append('solution', ticket.solution || '');
+          formData.append('created_at', ticket.created_at);
 
           // Добавляем файлы
           for (let i = 0; i < attachments.length; i++) {
