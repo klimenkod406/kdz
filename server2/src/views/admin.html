@@ -1125,7 +1125,7 @@
             }
         }
 
-        function addComment(ticketId) {
+        async function addComment(ticketId) {
             const text = document.getElementById('commentText').value;
             if (!text.trim()) return;
 
@@ -1260,21 +1260,25 @@
             }
         });
 
-        async function logout() {
-            await fetch('/api/auth/logout', { method: 'POST' });
-            window.location.href = '/';
-        }
-
         // Инициализация
         checkAuth();
         loadStats();
-        
+
         // Устанавливаем фильтр по умолчанию на "Новые"
         currentFilters = { status: 'new' };
         loadTickets();
 
         // Автообновление статистики
         setInterval(loadStats, 60000);
+    </script>
+    
+    <!-- Глобальные функции (должны быть вне DOMContentLoaded) -->
+    <script>
+        // Функция выхода (глобальная)
+        async function logout() {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/';
+        }
     </script>
 </body>
 </html>

@@ -46,9 +46,14 @@ app.use(session({
   }
 }));
 
-// Статические файлы (верстка + загрузки)
+// Статические файлы (верстка + загрузки + favicon)
 app.use(express.static(path.join(__dirname, 'views')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Favicon
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
 
 // Маршруты
 app.use('/api/auth', authRouter);

@@ -10,7 +10,7 @@ if (!fs.existsSync(LOG_DIR)) {
   fs.mkdirSync(LOG_DIR, { recursive: true });
 }
 
-// Форматирование даты
+// Форматирование даты (MSK UTC+3)
 function formatDate() {
   return new Date().toLocaleString('ru-RU', {
     year: 'numeric',
@@ -18,13 +18,26 @@ function formatDate() {
     day: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
-    second: '2-digit'
+    second: '2-digit',
+    timeZone: 'Europe/Moscow'
   });
 }
 
-// Кастомный формат вывода
+// Кастомный формат вывода (MSK UTC+3)
 const customFormat = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  winston.format.timestamp({
+    format: () => {
+      return new Date().toLocaleString('ru-RU', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZone: 'Europe/Moscow'
+      });
+    }
+  }),
   winston.format.printf(({ timestamp, level, message, ...meta }) => {
     const metaStr = Object.keys(meta).length ? JSON.stringify(meta) : '';
     return `[${timestamp}] [${level.toUpperCase()}] ${message} ${metaStr}`.trim();
