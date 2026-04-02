@@ -1276,7 +1276,12 @@
     <script>
         // Функция выхода (глобальная)
         async function logout() {
-            await fetch('/api/auth/logout', { method: 'POST' });
+            try {
+                await fetch('/api/auth/logout', { method: 'POST' });
+            } catch (err) {
+                // Игнорируем ошибки - сессия всё равно уничтожена на клиенте
+                console.log('Выход выполнен');
+            }
             window.location.href = '/';
         }
     </script>

@@ -40,17 +40,10 @@ router.post('/login', async (req, res) => {
     req.session.adminId = admin.id;
     req.session.adminUsername = admin.username;
 
-    // Сохраняем сессию в БД перед отправкой ответа
-    await new Promise((resolve, reject) => {
-      req.session.save((err) => {
-        if (err) reject(err);
-        else resolve();
-      });
-    });
-
     // Логируем успешный вход
     auditLog.login(username, true, req.ip);
 
+    // Отправляем ответ сразу, сессия сохранится асинхронно
     res.json({
       success: true,
       admin: {
@@ -58,26 +51,37 @@ router.post('/login', async (req, res) => {
         username: admin.username
       }
     });
+
+    // Сохраняем сессию после отправки ответа (не блокируем)
+    req.session.save((err) => {
+      if (err) console.error('Ошибка сохранения сессии:', err);
+    });
+
   } catch (err) {
     console.error('Ошибка входа:', err);
-    res.status(500).json({ error: 'Ошибка авторизации' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Ошибка авторизации' });
+    }
   }
 });
 
 // POST /api/auth/logout - выход
 router.post('/logout', (req, res) => {
   const username = req.session.adminUsername;
+  const ip = req.ip;
   
+  // Уничтожаем сессию
   req.session.destroy((err) => {
     if (err) {
-      return res.status(500).json({ error: 'Ошибка выхода' });
+      console.error('Ошибка выхода:', err);
     }
     
     // Логируем выход
     if (username) {
-      auditLog.logout(username, req.ip);
+      auditLog.logout(username, ip);
     }
     
+    // Отправляем ответ
     res.json({ success: true });
   });
 });
