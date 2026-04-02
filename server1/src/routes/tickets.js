@@ -10,8 +10,25 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
   try {
     const { employee_name, employee_email, department, areas, problem, solution } = req.body;
 
+    console.log('[DEBUG] Получены данные:', { employee_name, areas, problem });
+
     // Парсим JSON массив областей
-    const areasArray = typeof areas === 'string' ? JSON.parse(areas) : areas;
+    let areasArray = [];
+    try {
+      if (typeof areas === 'string') {
+        areasArray = JSON.parse(areas);
+      } else if (Array.isArray(areas)) {
+        areasArray = areas;
+      }
+    } catch (parseErr) {
+      console.error('[ERROR] Ошибка парсинга areas:', parseErr.message);
+      return res.status(400).json({ error: 'Неверный формат данных областей' });
+    }
+
+    // Фильтруем пустые и невалидные значения
+    areasArray = areasArray.filter(a => a && typeof a === 'string' && a.trim().length > 0);
+
+    console.log('[DEBUG] Обработанные области:', areasArray);
 
     // Валидация - проверяем на пустые строки тоже
     if (!employee_name || !employee_name.trim()) {

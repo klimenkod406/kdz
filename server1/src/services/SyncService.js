@@ -51,12 +51,20 @@ class SyncService {
           }
 
           // Отправляем заявку на Server 2 как JSON
+          let parsedAreas = [];
+          try {
+            parsedAreas = JSON.parse(ticket.areas);
+          } catch (parseErr) {
+            console.error(`[ERROR] Ошибка парсинга areas для заявки ${ticket.id}:`, parseErr.message);
+            parsedAreas = [];
+          }
+
           await axios.post(`${this.server2Url}/api/tickets/sync`, {
             id: ticket.id,
             employee_name: ticket.employee_name,
             employee_email: ticket.employee_email || '',
             department: ticket.department || '',
-            areas: JSON.parse(ticket.areas),  // Парсим JSON массив
+            areas: parsedAreas,
             problem: ticket.problem,
             solution: ticket.solution || '',
             created_at: ticket.created_at,

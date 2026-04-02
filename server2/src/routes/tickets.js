@@ -30,12 +30,14 @@ router.post('/sync', async (req, res) => {
       employee_name,
       employee_email,
       department,
-      area,
+      areas,
       problem,
       solution,
       created_at,
       files
     } = req.body;
+
+    console.log('[DEBUG] Server 2 получил синхронизацию:', { id, areas, problem });
 
     // Создаём заявку
     const ticket = await TicketModel.createFromSync({
@@ -43,7 +45,7 @@ router.post('/sync', async (req, res) => {
       employee_name,
       employee_email,
       department,
-      area,
+      areas,
       problem,
       solution,
       created_at
