@@ -17,15 +17,15 @@ class TicketModel {
       employee_email,
       department,
       area,
-      subject,
-      description,
+      problem,
+      solution,
       created_at
     } = ticketData;
 
     const query = `
       INSERT INTO tickets (
         id, employee_name, employee_email, department,
-        area, subject, description, created_at, received_from_server1_at
+        area, problem, solution, created_at, received_from_server1_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
       ON CONFLICT (id) DO NOTHING
       RETURNING *
@@ -37,8 +37,8 @@ class TicketModel {
       employee_email,
       department,
       area,
-      subject,
-      description,
+      problem,
+      solution,
       created_at
     ];
 
@@ -88,29 +88,26 @@ class TicketModel {
     const {
       employee_name,
       employee_email,
-      employee_phone,
       department,
-      subject,
-      description,
-      priority = 'normal'
+      area,
+      problem,
+      solution
     } = ticketData;
 
     const query = `
       INSERT INTO tickets (
-        employee_name, employee_email, employee_phone, department,
-        subject, description, priority
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
+        employee_name, employee_email, department, area, problem, solution
+      ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
 
     const values = [
       employee_name,
       employee_email || null,
-      employee_phone || null,
       department || null,
-      subject,
-      description,
-      priority
+      area,
+      problem,
+      solution || null
     ];
 
     const result = await db.query(query, values);
@@ -147,7 +144,7 @@ class TicketModel {
     }
 
     if (search) {
-      query += ` AND (employee_name ILIKE $${paramIndex} OR subject ILIKE $${paramIndex} OR description ILIKE $${paramIndex})`;
+      query += ` AND (employee_name ILIKE $${paramIndex} OR problem ILIKE $${paramIndex} OR solution ILIKE $${paramIndex})`;
       values.push(`%${search}%`);
       paramIndex++;
     }
@@ -276,9 +273,9 @@ class TicketModel {
   static async search(queryText, limit = 50) {
     const query = `
       SELECT * FROM tickets
-      WHERE employee_name ILIKE $1 
-         OR subject ILIKE $1 
-         OR description ILIKE $1
+      WHERE employee_name ILIKE $1
+         OR problem ILIKE $1
+         OR solution ILIKE $1
          OR department ILIKE $1
       ORDER BY created_at DESC
       LIMIT $2

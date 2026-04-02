@@ -8,7 +8,7 @@ const { upload, uploadErrorHandler, UPLOAD_DIR } = require('../middleware/upload
 // POST /api/tickets - создание новой заявки с файлами
 router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res) => {
   try {
-    const { employee_name, employee_email, department, area, subject, description } = req.body;
+    const { employee_name, employee_email, department, area, problem, solution } = req.body;
 
     // Валидация - проверяем на пустые строки тоже
     if (!employee_name || !employee_name.trim()) {
@@ -17,11 +17,8 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
     if (!area || !area.trim()) {
       return res.status(400).json({ error: 'Поле "Область" обязательно' });
     }
-    if (!subject || !subject.trim()) {
-      return res.status(400).json({ error: 'Поле "Тема" обязательно' });
-    }
-    if (!description || !description.trim()) {
-      return res.status(400).json({ error: 'Поле "Описание" обязательно' });
+    if (!problem || !problem.trim()) {
+      return res.status(400).json({ error: 'Поле "Проблема" обязательно' });
     }
 
     // Создаём заявку
@@ -30,8 +27,8 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
       employee_email: employee_email ? employee_email.trim() : null,
       department: department ? department.trim() : null,
       area: area.trim(),
-      subject: subject.trim(),
-      description: description.trim()
+      problem: problem.trim(),
+      solution: solution ? solution.trim() : null
     });
 
     // Обрабатываем файлы

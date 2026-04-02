@@ -17,8 +17,8 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
       employee_email,
       department,
       area,
-      subject,
-      description,
+      problem,
+      solution,
       created_at,
       attachments_count
     } = req.body;
@@ -30,8 +30,8 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
       employee_email,
       department,
       area,
-      subject,
-      description,
+      problem,
+      solution,
       created_at
     });
 

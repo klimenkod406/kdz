@@ -8,13 +8,13 @@ class TicketModel {
       employee_email,
       department,
       area,
-      subject,
-      description
+      problem,
+      solution
     } = ticketData;
 
     const query = `
       INSERT INTO tickets (
-        employee_name, employee_email, department, area, subject, description
+        employee_name, employee_email, department, area, problem, solution
       ) VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING *
     `;
@@ -24,8 +24,8 @@ class TicketModel {
       employee_email || null,
       department || null,
       area,
-      subject,
-      description
+      problem,
+      solution || null
     ];
 
     const result = await db.query(query, values);

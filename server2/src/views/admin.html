@@ -731,7 +731,7 @@
                         <th onclick="sortTable('created_at')">Дата ▼</th>
                         <th onclick="sortTable('employee_name')">Сотрудник</th>
                         <th onclick="sortTable('department')">Отдел</th>
-                        <th>Тема</th>
+                        <th>Проблема</th>
                         <th onclick="sortTable('area')">Область</th>
                         <th onclick="sortTable('status')">Статус</th>
                     </tr>
@@ -869,7 +869,7 @@
                     <td>${new Date(ticket.created_at).toLocaleString('ru-RU')}</td>
                     <td>${escapeHtml(ticket.employee_name)}</td>
                     <td>${escapeHtml(ticket.department || '-')}</td>
-                    <td>${escapeHtml(ticket.subject)}</td>
+                    <td>${escapeHtml(ticket.problem).substring(0, 50)}${ticket.problem.length > 50 ? '...' : ''}</td>
                     <td><span class="area-badge area-${ticket.area}">${getAreaName(ticket.area)}</span></td>
                     <td><span class="status-badge status-${ticket.status}">${getStatusName(ticket.status)}</span></td>
                 </tr>
@@ -1043,12 +1043,12 @@
                     <value>${escapeHtml(ticket.department || '-')}</value>
                 </div>
                 <div class="ticket-detail">
-                    <label>Тема</label>
-                    <value>${escapeHtml(ticket.subject)}</value>
+                    <label>Проблема</label>
+                    <value style="white-space: pre-wrap;">${escapeHtml(ticket.problem)}</value>
                 </div>
                 <div class="ticket-detail">
-                    <label>Описание</label>
-                    <value style="white-space: pre-wrap;">${escapeHtml(ticket.description)}</value>
+                    <label>Решение</label>
+                    <value style="white-space: pre-wrap;">${escapeHtml(ticket.solution || 'Не указано')}</value>
                 </div>
                 <div class="ticket-detail">
                     <label>Область</label>

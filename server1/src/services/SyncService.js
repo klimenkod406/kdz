@@ -42,8 +42,8 @@ class SyncService {
           formData.append('employee_email', ticket.employee_email || '');
           formData.append('department', ticket.department || '');
           formData.append('area', ticket.area);
-          formData.append('subject', ticket.subject);
-          formData.append('description', ticket.description);
+          formData.append('problem', ticket.problem);
+          formData.append('solution', ticket.solution || '');
 
           // Добавляем файлы
           for (let i = 0; i < attachments.length; i++) {
