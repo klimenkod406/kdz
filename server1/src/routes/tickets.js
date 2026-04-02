@@ -8,14 +8,17 @@ const { upload, uploadErrorHandler, UPLOAD_DIR } = require('../middleware/upload
 // POST /api/tickets - создание новой заявки с файлами
 router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res) => {
   try {
-    const { employee_name, employee_email, department, area, problem, solution } = req.body;
+    const { employee_name, employee_email, department, areas, problem, solution } = req.body;
+
+    // Парсим JSON массив областей
+    const areasArray = typeof areas === 'string' ? JSON.parse(areas) : areas;
 
     // Валидация - проверяем на пустые строки тоже
     if (!employee_name || !employee_name.trim()) {
       return res.status(400).json({ error: 'Поле "Имя" обязательно' });
     }
-    if (!area || !area.trim()) {
-      return res.status(400).json({ error: 'Поле "Область" обязательно' });
+    if (!areasArray || areasArray.length === 0) {
+      return res.status(400).json({ error: 'Выберите хотя бы одну область' });
     }
     if (!problem || !problem.trim()) {
       return res.status(400).json({ error: 'Поле "Проблема" обязательно' });
@@ -26,7 +29,7 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
       employee_name: employee_name.trim(),
       employee_email: employee_email ? employee_email.trim() : null,
       department: department ? department.trim() : null,
-      area: area.trim(),
+      areas: areasArray,
       problem: problem.trim(),
       solution: solution ? solution.trim() : null
     });

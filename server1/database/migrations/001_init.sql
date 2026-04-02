@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     employee_name VARCHAR(255) NOT NULL,
     employee_email VARCHAR(255),
     department VARCHAR(255),
-    area VARCHAR(50) NOT NULL,
+    areas TEXT NOT NULL,  -- JSON массив областей: ["quality","cost"]
     problem TEXT NOT NULL,
     solution TEXT,
     status VARCHAR(50) DEFAULT 'new',

@@ -107,6 +107,71 @@
             color: #e74c3c;
         }
 
+        /* Checkbox styles */
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 12px;
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .checkbox-item:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkbox-item .checkmark {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            margin-right: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item input:checked + .checkmark {
+            background: #2196f3;
+            border-color: #2196f3;
+        }
+
+        .checkbox-item input:checked + .checkmark::after {
+            content: '✓';
+            color: white;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .checkbox-item input:checked ~ .checkmark {
+            background: #2196f3;
+            border-color: #2196f3;
+        }
+
+        .checkbox-item:has(input:checked) {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            font-weight: 500;
+        }
+
         .alert {
             padding: 15px;
             border-radius: 4px;
@@ -317,18 +382,49 @@
             <div class="form-section">
                 <div class="section-title">Проблема и решение</div>
                 <div class="form-group">
-                    <label for="area">Область</label>
-                    <select id="area" name="area">
-                        <option value="" disabled selected>Выберите область</option>
-                        <option value="quality">Качество продукта</option>
-                        <option value="cost">Стоимость</option>
-                        <option value="sales">Увеличение продаж</option>
-                        <option value="disorder">Беспорядок</option>
-                        <option value="health">Здоровье и безопасность</option>
-                        <option value="productivity">Производительность</option>
-                        <option value="overstock">Чрезмерные запасы</option>
-                        <option value="environment">Окружающая среда</option>
-                    </select>
+                    <label>Область <span class="required">*</span> (можно выбрать несколько)</label>
+                    <div class="checkbox-group">
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="quality">
+                            <span class="checkmark"></span>
+                            Качество продукта
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="cost">
+                            <span class="checkmark"></span>
+                            Стоимость
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="sales">
+                            <span class="checkmark"></span>
+                            Увеличение продаж
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="disorder">
+                            <span class="checkmark"></span>
+                            Беспорядок
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="health">
+                            <span class="checkmark"></span>
+                            Здоровье и безопасность
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="productivity">
+                            <span class="checkmark"></span>
+                            Производительность
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="overstock">
+                            <span class="checkmark"></span>
+                            Чрезмерные запасы
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="environment">
+                            <span class="checkmark"></span>
+                            Окружающая среда
+                        </label>
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -491,8 +587,20 @@
         });
 
         async function submitForm() {
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData.entries());
+            // Собираем выбранные области
+            const selectedAreas = [];
+            document.querySelectorAll('input[name="areas"]:checked').forEach(cb => {
+                selectedAreas.push(cb.value);
+            });
+
+            const data = {
+                employee_name: document.getElementById('employee_name').value,
+                employee_email: document.getElementById('employee_email').value,
+                department: document.getElementById('department').value,
+                areas: selectedAreas,  // Массив областей
+                problem: document.getElementById('problem').value,
+                solution: document.getElementById('solution').value
+            };
 
             try {
                 const response = await fetch('/api/tickets', {
@@ -521,11 +629,17 @@
         async function submitFormWithFiles() {
             const formData = new FormData();
 
+            // Собираем выбранные области
+            const selectedAreas = [];
+            document.querySelectorAll('input[name="areas"]:checked').forEach(cb => {
+                selectedAreas.push(cb.value);
+            });
+
             // Добавляем текстовые поля
             formData.append('employee_name', document.getElementById('employee_name').value);
             formData.append('employee_email', document.getElementById('employee_email').value);
             formData.append('department', document.getElementById('department').value);
-            formData.append('area', document.getElementById('area').value);
+            formData.append('areas', JSON.stringify(selectedAreas));  // JSON массив
             formData.append('problem', document.getElementById('problem').value);
             formData.append('solution', document.getElementById('solution').value);
 

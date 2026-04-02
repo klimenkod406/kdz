@@ -16,7 +16,7 @@ class TicketModel {
       employee_name,
       employee_email,
       department,
-      area,
+      areas,  // Массив областей
       problem,
       solution,
       created_at
@@ -25,7 +25,7 @@ class TicketModel {
     const query = `
       INSERT INTO tickets (
         id, employee_name, employee_email, department,
-        area, problem, solution, created_at, received_from_server1_at
+        areas, problem, solution, created_at, received_from_server1_at
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, CURRENT_TIMESTAMP)
       ON CONFLICT (id) DO NOTHING
       RETURNING *
@@ -36,7 +36,7 @@ class TicketModel {
       employee_name,
       employee_email,
       department,
-      area,
+      JSON.stringify(areas),  // Сохраняем как JSON
       problem,
       solution,
       created_at

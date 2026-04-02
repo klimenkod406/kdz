@@ -56,7 +56,7 @@ class SyncService {
             employee_name: ticket.employee_name,
             employee_email: ticket.employee_email || '',
             department: ticket.department || '',
-            area: ticket.area,
+            areas: JSON.parse(ticket.areas),  // Парсим JSON массив
             problem: ticket.problem,
             solution: ticket.solution || '',
             created_at: ticket.created_at,
