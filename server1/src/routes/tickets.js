@@ -10,19 +10,28 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
   try {
     const { employee_name, employee_email, department, area, subject, description } = req.body;
 
-    // Валидация
-    if (!employee_name || !area || !subject || !description) {
-      return res.status(400).json({ error: 'Поля "Имя", "Область", "Тема" и "Описание" обязательны' });
+    // Валидация - проверяем на пустые строки тоже
+    if (!employee_name || !employee_name.trim()) {
+      return res.status(400).json({ error: 'Поле "Имя" обязательно' });
+    }
+    if (!area || !area.trim()) {
+      return res.status(400).json({ error: 'Поле "Область" обязательно' });
+    }
+    if (!subject || !subject.trim()) {
+      return res.status(400).json({ error: 'Поле "Тема" обязательно' });
+    }
+    if (!description || !description.trim()) {
+      return res.status(400).json({ error: 'Поле "Описание" обязательно' });
     }
 
     // Создаём заявку
     const ticket = await TicketModel.create({
-      employee_name,
-      employee_email,
-      department,
-      area,
-      subject,
-      description
+      employee_name: employee_name.trim(),
+      employee_email: employee_email ? employee_email.trim() : null,
+      department: department ? department.trim() : null,
+      area: area.trim(),
+      subject: subject.trim(),
+      description: description.trim()
     });
 
     // Обрабатываем файлы
