@@ -33,8 +33,7 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
       area,
       problem,
       solution,
-      created_at,
-      attachments_count
+      created_at
     } = req.body;
 
     // Создаём заявку
@@ -53,33 +52,19 @@ router.post('/sync', upload.array('files', 20), uploadErrorHandler, async (req, 
     const attachments = [];
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
-        // Получаем информацию о файле из body
-        const fileInfoStr = req.body[`file_${req.files.indexOf(file)}_info`];
-        let fileInfo = {
+        const attachment = await TicketModel.addAttachmentFromSync(id, {
           file_name: file.filename,
           file_original_name: file.originalname,
           file_mime_type: file.mimetype,
-          file_size: file.size
-        };
-
-        if (fileInfoStr) {
-          fileInfo = JSON.parse(fileInfoStr);
-          fileInfo.file_name = file.filename;
-        }
-
-        const attachment = await TicketModel.addAttachmentFromSync(id, {
-          file_name: fileInfo.file_name,
-          file_original_name: fileInfo.file_original_name,
-          file_mime_type: fileInfo.file_mime_type,
-          file_size: fileInfo.file_size,
+          file_size: file.size,
           file_path: path.join('uploads', file.filename)
         });
         attachments.push(attachment);
       }
     }
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       ticket,
       attachments_count: attachments.length
     });

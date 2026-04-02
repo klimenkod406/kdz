@@ -18,7 +18,7 @@ class SyncService {
     
     try {
       // Получаем все несентые заявки
-      const tickets = await TicketModel.findNotSent(0); // 0 = отправлять сразу все
+      const tickets = await TicketModel.findNotSent(0);
 
       if (tickets.length === 0) {
         console.log(`[${formatDate(new Date())}] Нет заявок для отправки`);
@@ -35,7 +35,7 @@ class SyncService {
           // Получаем вложения заявки
           const attachments = await TicketModel.getAttachments(ticket.id);
 
-          // Формируем данные для отправки через FormData
+          // Создаём FormData для каждой заявки отдельно
           const formData = new FormData();
           formData.append('id', ticket.id);
           formData.append('employee_name', ticket.employee_name);
@@ -52,17 +52,14 @@ class SyncService {
             const filePath = path.join(UPLOAD_DIR, attachment.file_name);
 
             if (fs.existsSync(filePath)) {
-              // Используем form-data.append с потоком
-              formData.append('files', fs.createReadStream(filePath), attachment.file_original_name);
+              const fileStream = fs.createReadStream(filePath);
+              formData.append('files', fileStream, attachment.file_original_name);
             }
           }
 
           // Отправляем заявку на Server 2
           await axios.post(`${this.server2Url}/api/tickets/sync`, formData, {
-            headers: {
-              ...formData.getHeaders()
-              // Content-Length будет вычислен автоматически
-            },
+            headers: formData.getHeaders(),
             maxBodyLength: Infinity,
             maxContentLength: Infinity
           });
@@ -142,16 +139,6 @@ class SyncService {
     `;
     const result = await db.query(query, [limit]);
     return result.rows;
-  }
-
-  // Очистка старых логов (старше 30 дней)
-  async cleanupLogs(daysOld = 30) {
-    const query = `
-      DELETE FROM sync_logs 
-      WHERE created_at <= NOW() - INTERVAL '${daysOld} days'
-    `;
-    const result = await db.query(query);
-    return result.rowCount;
   }
 }
 
