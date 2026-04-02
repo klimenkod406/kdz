@@ -210,6 +210,12 @@ router.post('/:id/files/download-all', requireAuth, async (req, res) => {
       zlib: { level: 9 } // Максимальное сжатие
     });
 
+    // Обработка ошибок архива
+    archive.on('error', (err) => {
+      console.error('Ошибка архивации:', err);
+      res.status(500).json({ error: 'Ошибка создания архива' });
+    });
+
     // Настраиваем ответ
     res.setHeader('Content-Type', 'application/zip');
     res.setHeader('Content-Disposition', `attachment; filename="ticket-${ticketId.substring(0, 8)}-files.zip"`);
@@ -218,24 +224,30 @@ router.post('/:id/files/download-all', requireAuth, async (req, res) => {
     archive.pipe(res);
 
     // Добавляем файлы в архив
+    let filesAdded = 0;
     for (const attachment of attachments) {
       const filePath = path.join(UPLOAD_DIR, attachment.file_name);
       if (fs.existsSync(filePath)) {
-        // Добавляем файл в архив с оригинальным именем
         archive.file(filePath, { name: attachment.file_original_name });
+        filesAdded++;
       }
     }
 
-    // Завершаем архив и логируем после успешной отправки
-    archive.on('end', () => {
-      auditLog.downloadFiles(ticketId, req.session.adminUsername, attachments.length, req.ip);
-    });
+    if (filesAdded === 0) {
+      return res.status(404).json({ error: 'Файлы не найдены на сервере' });
+    }
 
+    // Завершаем архив
     await archive.finalize();
+
+    // Логируем после успешной отправки
+    auditLog.downloadFiles(ticketId, req.session.adminUsername, filesAdded, req.ip);
 
   } catch (err) {
     console.error('Ошибка создания архива:', err);
-    res.status(500).json({ error: 'Ошибка создания архива' });
+    if (!res.headersSent) {
+      res.status(500).json({ error: 'Ошибка создания архива' });
+    }
   }
 });
 

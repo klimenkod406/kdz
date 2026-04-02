@@ -996,7 +996,7 @@
                     <div class="attachments-section">
                         <div class="attachments-header">
                             <h3>📎 Вложения (${currentAttachments.length})</h3>
-                            <button class="btn btn-sm" onclick="downloadAllFiles('${ticket.id}')">📥 Скачать все файлы</button>
+                            <button class="btn btn-sm" onclick="downloadAllFiles('${ticket.id}', event)">📥 Скачать все файлы</button>
                         </div>
                         <div class="attachments-grid">
                             ${currentAttachments.map((att, index) => {
@@ -1147,7 +1147,7 @@
         }
 
         // Скачать все файлы заявки
-        async function downloadAllFiles(ticketId) {
+        async function downloadAllFiles(ticketId, event) {
             try {
                 const btn = event.target;
                 btn.disabled = true;
@@ -1159,7 +1159,7 @@
                 });
 
                 if (!response.ok) {
-                    throw new Error('Ошибка создания архива');
+                  throw new Error('Ошибка создания архива');
                 }
 
                 // Получаем blob с архивом
