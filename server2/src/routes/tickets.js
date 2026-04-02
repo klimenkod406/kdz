@@ -52,28 +52,33 @@ router.post('/sync', async (req, res) => {
     // Обрабатываем файлы (base64)
     const attachments = [];
     if (files && files.length > 0) {
+      // Создаём директорию если нет
+      if (!fs.existsSync(UPLOAD_DIR)) {
+        fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+      }
+      
       for (const fileData of files) {
-        // Декодируем base64 и сохраняем файл
-        const fileBuffer = Buffer.from(fileData.file_base64, 'base64');
-        const filePath = path.join(UPLOAD_DIR, fileData.file_name);
-        
-        // Создаём директорию если нет
-        if (!fs.existsSync(UPLOAD_DIR)) {
-          fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+        try {
+          // Декодируем base64 и сохраняем файл
+          const fileBuffer = Buffer.from(fileData.file_base64, 'base64');
+          const filePath = path.join(UPLOAD_DIR, fileData.file_name);
+          
+          // Сохраняем файл
+          fs.writeFileSync(filePath, fileBuffer);
+          
+          // Добавляем запись в БД
+          const attachment = await TicketModel.addAttachmentFromSync(id, {
+            file_name: fileData.file_name,
+            file_original_name: fileData.file_original_name,
+            file_mime_type: fileData.file_mime_type,
+            file_size: fileData.file_size,
+            file_path: path.join('uploads', fileData.file_name)
+          });
+          attachments.push(attachment);
+        } catch (fileErr) {
+          console.error(`Ошибка сохранения файла ${fileData.file_original_name}:`, fileErr.message);
+          // Продолжаем с остальными файлами
         }
-        
-        // Сохраняем файл
-        fs.writeFileSync(filePath, fileBuffer);
-        
-        // Добавляем запись в БД
-        const attachment = await TicketModel.addAttachmentFromSync(id, {
-          file_name: fileData.file_name,
-          file_original_name: fileData.file_original_name,
-          file_mime_type: fileData.file_mime_type,
-          file_size: fileData.file_size,
-          file_path: path.join('uploads', fileData.file_name)
-        });
-        attachments.push(attachment);
       }
     }
 
@@ -83,8 +88,11 @@ router.post('/sync', async (req, res) => {
       attachments_count: attachments.length
     });
   } catch (err) {
-    console.error('Ошибка синхронизации:', err);
-    res.status(500).json({ error: 'Ошибка синхронизации' });
+    console.error('Ошибка синхронизации:', err.message);
+    if (err.message.includes('too large') || err.code === 'ECONNRESET') {
+      console.error('Слишком большой размер данных. Попробуйте уменьшить размер файлов.');
+    }
+    res.status(500).json({ error: 'Ошибка синхронизации: ' + err.message });
   }
 });
 

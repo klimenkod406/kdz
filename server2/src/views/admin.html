@@ -1190,6 +1190,20 @@
             document.getElementById('ticketModal').classList.remove('active');
         }
 
+        // Закрытие по клику на пустую зону
+        document.getElementById('ticketModal').addEventListener('click', (e) => {
+            if (e.target.id === 'ticketModal') {
+                closeModal();
+            }
+        });
+
+        // Закрытие по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
         // Lightbox функции
         function openLightbox(index) {
             if (!currentAttachments || currentAttachments.length === 0) return;
