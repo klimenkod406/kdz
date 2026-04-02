@@ -1,6 +1,13 @@
 # Система заявок (Ticket System)
 
-Система управления заявками для сотрудников с архитектурой на двух серверах.
+Система управления заявками для сотрудников с двухсерверной архитектурой.
+
+**Последнее обновление:** 2026-04-02  
+**Версия:** v3.48.rm 
+**Node.js:** 24.14.1 ✓  
+**Платформа:** Windows (win32)
+
+---
 
 ## 📋 Описание
 
@@ -10,7 +17,8 @@
 - Прием заявок от сотрудников через веб-форму
 - Временное хранение заявок (настраиваемый период)
 - Автоматическая отправка заявок на Сервер 2
-- Удаление отправленных заявок после истечения срока
+- Удаление отправленных заявок после отправки
+- Загрузка файлов (фото, видео, документы)
 
 **Порт по умолчанию:** 3001
 
@@ -19,38 +27,46 @@
 - Админ-панель для управления заявками
 - Авторизация администраторов
 - Изменение статусов, комментарии, история
+- Система логирования (security.log, error.log)
+- Скачивание файлов в виде ZIP-архива
 
 **Порт по умолчанию:** 3002
 
-## ✅ Тестирование
+---
 
-Все компоненты прошли проверку:
-- ✅ Синтаксис JavaScript (все файлы)
-- ✅ Структура проекта
-- ✅ Миграции базы данных
-- ✅ Конфигурационные файлы
-- ✅ Зависимости npm
+## ✅ Состояние проекта
 
-**Node.js:** 24.14.1 ✓
-**Платформа:** Windows (win32)
+Все компоненты прошли проверку и готовы к использованию:
 
-Полный отчёт о тестировании: `TEST-REPORT.md`
+| Компонент | Статус |
+|-----------|--------|
+| Структура проекта | ✅ Полная |
+| Синтаксис JavaScript | ✅ Все файлы проверены |
+| Миграции базы данных | ✅ Созданы |
+| Конфигурационные файлы | ✅ .env.example готовы |
+| Зависимости npm | ✅ Определены |
+| Установщик | ✅ Протестирован |
+| Документация | ✅ Полная |
+
+**Подробный отчёт:** `TEST-REPORT.md`
+
+---
 
 ## 🚀 Быстрый старт
 
 ### Требования
-- Node.js 16+
-- PostgreSQL 12+
+- **Node.js 16+** (проверено: 24.14.1)
+- **PostgreSQL 12+**
 
 ### ⚠️ Важно при скачивании с GitHub
 
 **После скачивания репозитория:**
 
 1. **Установите зависимости:**
-   
+
    **Windows:**
    - Дважды кликните на `install-dependencies.bat`
-   
+
    **Любая ОС:**
    ```bash
    cd installer
@@ -62,7 +78,7 @@
 
    **Windows:**
    - Дважды кликните на `Установить сервер.bat`
-   
+
    **Любая ОС:**
    ```bash
    node installer/setup.js
@@ -90,7 +106,9 @@
 
 ### 📄 Подробная документация по установке
 
-Смотрите `INSTALLER-GUIDE.md` - полное руководство по установке.
+Смотрите `INSTALLER-GUIDE.md` — полное руководство по установке.
+
+---
 
 ## 📁 Структура проекта
 
@@ -98,29 +116,44 @@
 kdz/
 ├── server1/                 # Сервер приема заявок
 │   ├── src/
-│   │   ├── config/         # Конфигурация БД
-│   │   ├── models/         # Модели данных
-│   │   ├── routes/         # API маршруты
-│   │   ├── services/       # Сервисы (синхронизация)
-│   │   ├── views/          # Веб-страницы
-│   │   └── index.js        # Точка входа
+│   │   ├── config/         # Конфигурация БД (database.js)
+│   │   ├── middleware/     # Загрузка файлов (upload.js)
+│   │   ├── models/         # Ticket.js
+│   │   ├── routes/         # tickets.js
+│   │   ├── services/       # SyncService.js (синхронизация)
+│   │   ├── views/          # index.html (форма заявки)
+│   │   ├── index.js        # Точка входа
+│   │   └── utils.js        # Утилиты
 │   ├── database/
-│   │   └── migrations/     # Миграции БД
+│   │   └── migrations/     # 001_init.sql
+│   ├── uploads/            # Директория для файлов
+│   ├── .env.example
 │   └── package.json
 ├── server2/                 # Сервер хранения и админ-панель
 │   ├── src/
-│   │   ├── config/
-│   │   ├── models/
-│   │   ├── routes/
-│   │   ├── views/
-│   │   └── index.js
+│   │   ├── config/         # database.js
+│   │   ├── middleware/     # upload.js
+│   │   ├── models/         # Ticket.js, Admin.js
+│   │   ├── routes/         # tickets.js, auth.js
+│   │   ├── utils/          # logger.js (Winston)
+│   │   ├── views/          # admin.html, login.html
+│   │   ├── index.js        # Точка входа
+│   │   └── utils.js        # Утилиты
 │   ├── database/
-│   │   └── migrations/
+│   │   └── migrations/     # 001_init.sql
+│   ├── uploads/            # Директория для файлов
+│   ├── logs/               # Логи (security.log, error.log...)
+│   ├── .env.example
 │   └── package.json
-├── shared/                  # Общие компоненты
+├── shared/                  # Общие компоненты (пустой)
 ├── installer/               # Установщик
+│   ├── setup.js
+│   ├── package.json
+│   └── node_modules/
 └── package.json
 ```
+
+---
 
 ## 🔧 Конфигурация
 
@@ -134,7 +167,7 @@ kdz/
 | `DB_PORT` | Порт PostgreSQL | 5432 |
 | `DB_NAME` | Имя БД | tickets_temp |
 | `DB_USER` | Пользователь БД | postgres |
-| `DB_PASSWORD` | Пароль БД | - |
+| `DB_PASSWORD` | Пароль БД | — |
 | `SERVER2_URL` | URL Сервера 2 | http://localhost:3002 |
 | `SYNC_INTERVAL_MINUTES` | Интервал синхронизации | 5 |
 | `TEMP_STORAGE_MINUTES` | Время хранения до отправки | 30 |
@@ -149,10 +182,12 @@ kdz/
 | `DB_PORT` | Порт PostgreSQL | 5432 |
 | `DB_NAME` | Имя БД | tickets_permanent |
 | `DB_USER` | Пользователь БД | postgres |
-| `DB_PASSWORD` | Пароль БД | - |
-| `SESSION_SECRET` | Секрет сессий | авто |
+| `DB_PASSWORD` | Пароль БД | — |
+| `SESSION_SECRET` | Секрет сессий | автогенерация |
 | `ADMIN_USERNAME` | Логин администратора | admin |
 | `ADMIN_PASSWORD` | Пароль администратора | admin123 |
+
+---
 
 ## 🌐 Доступ в локальной сети
 
@@ -173,15 +208,17 @@ kdz/
 
    **Сервер 2 (админ-панель):**
    ```
-   http://<IP-сервера-2>:3002
+   http://<IP-сервера-2>:3002/admin
    ```
 
 3. **Откройте порты в фаерволе** (если требуется):
-   ```bash
+   ```powershell
    # Windows (PowerShell от администратора)
    New-NetFirewallRule -DisplayName "Ticket Server 1" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow
    New-NetFirewallRule -DisplayName "Ticket Server 2" -Direction Inbound -LocalPort 3002 -Protocol TCP -Action Allow
    ```
+
+---
 
 ## 📊 API
 
@@ -194,6 +231,8 @@ kdz/
 | `POST` | `/api/tickets` | Создать заявку |
 | `GET` | `/api/tickets` | Список заявок |
 | `GET` | `/api/tickets/stats` | Статистика |
+| `GET` | `/api/tickets/:id` | Заявка с вложениями |
+| `GET` | `/api/tickets/:id/files/:filename` | Скачать файл |
 | `POST` | `/api/sync/force` | Принудительная синхронизация |
 | `GET` | `/api/sync/history` | История синхронизаций |
 
@@ -205,11 +244,19 @@ kdz/
 | `GET` | `/admin` | Админ-панель |
 | `POST` | `/api/auth/login` | Вход |
 | `POST` | `/api/auth/logout` | Выход |
+| `GET` | `/api/auth/me` | Проверка сессии |
 | `GET` | `/api/tickets` | Список заявок (требуется авторизация) |
-| `GET` | `/api/tickets/:id` | Заявка с комментариями |
+| `GET` | `/api/tickets/stats` | Статистика (требуется авторизация) |
+| `GET` | `/api/tickets/search` | Поиск заявок |
+| `GET` | `/api/tickets/:id` | Заявка с комментариями и историей |
 | `PUT` | `/api/tickets/:id/status` | Изменить статус |
 | `POST` | `/api/tickets/:id/comments` | Добавить комментарий |
+| `GET` | `/api/tickets/:id/files/:filename` | Скачать файл |
+| `GET` | `/api/tickets/:id/files/download-all` | Скачать все файлы (ZIP) |
 | `POST` | `/api/tickets/sync` | Получить заявку с Server 1 |
+| `GET` | `/api/sync/history` | История синхронизаций |
+
+---
 
 ## 🔐 Безопасность
 
@@ -217,6 +264,92 @@ kdz/
 2. **Используйте сложные пароли** для PostgreSQL
 3. **Настройте HTTPS** для продакшена
 4. **Ограничьте доступ** к портам фаерволом
+5. **Система логирования** фиксирует все действия (входы, изменения статусов, скачивания)
+
+### Система логирования (Server 2)
+
+| Файл | Назначение |
+|------|------------|
+| `logs/security.log` | События безопасности (входы, изменения статусов, скачивания) |
+| `logs/error.log` | Ошибки |
+| `logs/warn.log` | Предупреждения |
+| `logs/combined.log` | Все логи |
+
+**Примеры логов:**
+```
+[2026-04-02 10:00:00] [INFO] Вход в систему: admin
+[2026-04-02 10:15:00] [INFO] Изменение статуса заявки: uuid
+[2026-04-02 10:25:00] [INFO] Скачивание файлов заявки: uuid
+```
+
+---
+
+## 🗄️ База данных
+
+### Сервер 1 (tickets_temp)
+
+**Таблицы:**
+- `tickets` — заявки (id, employee_name, employee_email, department, areas, problem, solution, status, sent_to_server2, created_at, sent_at)
+- `ticket_attachments` — вложения (id, ticket_id, file_name, file_original_name, file_mime_type, file_size, file_path, created_at)
+- `sync_logs` — логи синхронизации (id, tickets_count, success, error_message, created_at)
+
+### Сервер 2 (tickets_permanent)
+
+**Таблицы:**
+- `session` — сессии Express (sid, sess, expire)
+- `admins` — администраторы (id, username, password_hash, created_at, last_login)
+- `tickets` — заявки (id, employee_name, employee_email, department, areas, problem, solution, status, received_from_server1_at, created_at, updated_at)
+- `ticket_attachments` — вложения (id, ticket_id, file_name, file_original_name, file_mime_type, file_size, file_path, received_from_server1_at, created_at)
+- `ticket_comments` — комментарии (id, ticket_id, admin_id, comment, created_at)
+- `ticket_history` — история изменений (id, ticket_id, admin_id, old_status, new_status, comment, created_at)
+- `sync_logs` — логи синхронизации
+
+---
+
+## 📝 Статусы заявок
+
+| Статус | Описание |
+|--------|----------|
+| `new` | Новая заявка |
+| `in_progress` | В работе |
+| `resolved` | Решена |
+| `closed` | Закрыта |
+
+---
+
+## 🎯 Области (Areas)
+
+| Область | Описание |
+|---------|----------|
+| `quality` | Качество продукта |
+| `cost` | Стоимость |
+| `sales` | Увеличение продаж |
+| `disorder` | Беспорядок |
+| `health` | Здоровье и безопасность |
+| `productivity` | Производительность |
+| `overstock` | Чрезмерные запасы |
+| `environment` | Окружающая среда |
+
+---
+
+## 📎 Поддерживаемые типы файлов
+
+**Изображения:** JPG, JPEG, PNG, GIF, WebP, BMP, TIFF
+
+**Документы:** PDF, DOC, DOCX, XLS, XLSX, TXT, CSV
+
+**Видео:** MP4, WebM, MOV, AVI
+
+**Архивы:** ZIP, RAR, 7Z
+
+### Ограничения
+
+| Параметр | Сервер 1 | Сервер 2 |
+|----------|----------|----------|
+| Макс. размер файла | 50 MB | 100 MB |
+| Макс. количество файлов | 10 | 20 |
+
+---
 
 ## 🛠️ Разработка
 
@@ -232,19 +365,63 @@ cd server2
 npm run dev
 ```
 
-## 📝 Статусы заявок
+### npm scripts
 
-- `new` - Новая заявка
-- `in_progress` - В работе
-- `resolved` - Решена
-- `closed` - Закрыта
+**Server 1:**
+- `npm start` — запуск production
+- `npm run dev` — запуск с nodemon (autoreload)
+- `npm run setup` — запуск установщика
 
-## 🎯 Приоритеты
+**Server 2:**
+- `npm start` — запуск production
+- `npm run dev` — запуск с nodemon (autoreload)
+- `npm run setup` — запуск установщика
 
-- `low` - Низкий
-- `normal` - Обычный
-- `high` - Высокий
-- `critical` - Критический
+---
+
+## 📦 Зависимости
+
+### Server 1
+
+| Пакет | Версия | Назначение |
+|-------|--------|------------|
+| express | ^4.18.2 | Веб-фреймворк |
+| pg | ^8.11.3 | PostgreSQL клиент |
+| dotenv | ^16.3.1 | Переменные окружения |
+| cors | ^2.8.5 | CORS middleware |
+| node-cron | ^3.0.3 | Планировщик задач |
+| axios | ^1.6.2 | HTTP клиент |
+| multer | ^1.4.5-lts.1 | Загрузка файлов |
+| form-data | ^4.0.0 | FormData для multipart |
+
+### Server 2
+
+| Пакет | Версия | Назначение |
+|-------|--------|------------|
+| express | ^4.18.2 | Веб-фреймворк |
+| pg | ^8.11.3 | PostgreSQL клиент |
+| dotenv | ^16.3.1 | Переменные окружения |
+| cors | ^2.8.5 | CORS middleware |
+| multer | ^1.4.5-lts.1 | Загрузка файлов |
+| axios | ^1.14.0 | HTTP клиент |
+| bcrypt | ^5.1.1 | Хеширование паролей |
+| express-session | ^1.17.3 | Сессии |
+| connect-pg-simple | ^9.0.1 | Хранение сессий в PostgreSQL |
+| morgan | ^1.10.0 | HTTP логирование |
+| winston | ^3.11.0 | Логгер |
+| archiver | ^7.0.0 | Архивация (ZIP) |
+
+### Installer
+
+| Пакет | Версия | Назначение |
+|-------|--------|------------|
+| inquirer | ^8.2.6 | Интерактивные опросы |
+| chalk | ^4.1.2 | Цветной вывод |
+| pg | ^8.11.3 | PostgreSQL клиент |
+| dotenv | ^16.3.1 | Переменные окружения |
+| fs-extra | ^11.2.0 | Расширенные FS операции |
+
+---
 
 ## 🐛 Устранение проблем
 
@@ -260,6 +437,42 @@ npm run dev
 ### Не работает авторизация
 - Очистите кэш браузера
 - Проверьте `SESSION_SECRET` в `.env`
+
+### Ошибка "Cannot find module 'inquirer'"
+```bash
+cd installer
+npm install
+```
+
+### Ошибка подключения к PostgreSQL
+- Проверьте пароль PostgreSQL
+- Убедитесь, что PostgreSQL запущен
+- Проверьте параметры в `.env`
+
+### Порт занят
+```
+Error: listen EADDRINUSE: address already in use :::3001
+```
+**Решение:** Измените порт в `.env` или остановите сервис, использующий порт
+
+---
+
+## 📄 Документация
+
+| Файл | Описание |
+|------|----------|
+| `README.md` | Основная документация |
+| `INSTALLER-GUIDE.md` | Руководство по установке |
+| `START_HERE.md` | Первый запуск после скачивания |
+| `START_HERE_EN.txt` | Quick start (English) |
+| `TEST-REPORT.md` | Отчёт о тестировании |
+| `ИНСТРУКЦИЯ.txt` | Инструкция на русском |
+| `БЫСТРЫЙ_СТАРТ.txt` | Быстрый старт |
+| `GITHUB-README.txt` | Инструкция для GitHub |
+| `LOGGING-SYSTEM.md` | Система логирования |
+| `CHANGES.md` | История изменений |
+
+---
 
 ## 📄 Лицензия
 
