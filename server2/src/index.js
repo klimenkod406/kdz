@@ -20,8 +20,16 @@ const PORT = process.env.PORT || 3002;
 const HOST = process.env.HOST || '0.0.0.0';
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ 
+  limit: '100mb',  // Увеличиваем лимит JSON до 100MB
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+app.use(express.urlencoded({ 
+  extended: true,
+  limit: '100mb'  // Увеличиваем лимит URL данных
+}));
 
 // Логирование HTTP запросов
 app.use(morgan('combined', {
