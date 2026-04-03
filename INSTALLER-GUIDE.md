@@ -2,8 +2,8 @@
 
 ## ✅ Установщик обновлён и готов к использованию
 
-**Последнее обновление:** 2026-04-01
-**Версия:** 2.0 (с поддержкой всех новых функций)
+**Последнее обновление:** 2026-04-03  
+**Версия:** 2.0 (см. также корневой `package.json`)
 
 ---
 
@@ -53,8 +53,7 @@ node installer/setup.js
 **Для Server 1:**
 ```
 URL Сервера 2: http://192.168.1.100:3002
-Интервал синхронизации: 5
-Время хранения до отправки: 30
+Интервал синхронизации (минуты): 5
 ```
 
 **Для Server 2:**
@@ -107,14 +106,10 @@ npm install
 **Server 2:**
 ```bash
 npm install
-✓ express
-✓ pg
-✓ multer
-✓ bcrypt
-✓ express-session
-✓ connect-pg-simple
-✓ dotenv
-✓ cors
+✓ express, pg, dotenv, cors
+✓ multer, axios, archiver
+✓ bcrypt, express-session, connect-pg-simple
+✓ morgan, winston
 ```
 
 ### 3. Создание базы данных
@@ -152,7 +147,6 @@ DB_USER=postgres
 DB_PASSWORD=********
 SERVER2_URL=http://localhost:3002
 SYNC_INTERVAL_MINUTES=5
-TEMP_STORAGE_MINUTES=30
 ```
 
 **Server 2 (.env):**
@@ -188,9 +182,6 @@ ADMIN_PASSWORD=admin123
 
   Форма подачи заявок:
   http://localhost:3001
-
-  Статус синхронизации:
-  http://localhost:3001/status
 
   Особенности:
   ✓ Загрузка файлов (фото, видео, документы)
@@ -347,6 +338,7 @@ kdz/
 │   │   ├── middleware/      ← upload.js
 │   │   ├── models/
 │   │   ├── routes/
+│   │   ├── utils/          ← logger.js (Winston)
 │   │   ├── views/
 │   │   ├── index.js
 │   │   └── utils.js
@@ -368,7 +360,7 @@ kdz/
 
 1. Откройте `http://localhost:3001`
 2. Создайте заявку с файлами
-3. Проверьте `http://localhost:3001/status`
+3. Дождитесь срабатывания синхронизации по расписанию или проверьте консоль Server 1 и таблицу `sync_logs` в БД
 
 ### Server 2
 
