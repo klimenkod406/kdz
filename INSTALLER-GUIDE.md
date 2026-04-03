@@ -100,15 +100,14 @@ npm install
 ✓ form-data
 ✓ node-cron
 ✓ dotenv
-✓ cors
 ```
 
 **Server 2:**
 ```bash
 npm install
-✓ express, pg, dotenv, cors
+✓ express, pg, dotenv
 ✓ multer, axios, archiver
-✓ bcrypt, express-session, connect-pg-simple
+✓ bcrypt, express-session, connect-pg-simple, express-rate-limit
 ✓ morgan, winston
 ```
 
@@ -147,6 +146,7 @@ DB_USER=postgres
 DB_PASSWORD=********
 SERVER2_URL=http://localhost:3002
 SYNC_INTERVAL_MINUTES=5
+SYNC_SECRET=********
 ```
 
 **Server 2 (.env):**
@@ -159,9 +159,12 @@ DB_NAME=tickets_permanent
 DB_USER=postgres
 DB_PASSWORD=********
 SESSION_SECRET=auto_generated_secret
+SYNC_SECRET=********
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=admin123
+ADMIN_PASSWORD=********
 ```
+
+`SYNC_SECRET` должен быть **одинаковым** на обоих серверах (минимум 16 символов).
 
 ### 6. Запуск сервера
 

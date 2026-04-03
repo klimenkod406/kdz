@@ -50,7 +50,8 @@ app.use(session({
   cookie: {
     maxAge: 24 * 60 * 60 * 1000, // 24 часа
     httpOnly: true,
-    secure: false // Для HTTPS установите true
+    sameSite: 'lax',
+    secure: process.env.SESSION_COOKIE_SECURE === 'true'
   }
 }));
 
@@ -137,12 +138,14 @@ async function startServer() {
     console.log(`  Админ-панель: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}/admin`);
     console.log(`  Доступен в локальной сети: http://<ваш-ip>:${PORT}`);
     console.log('='.repeat(50) + '\n');
+    if (!process.env.SYNC_SECRET || process.env.SYNC_SECRET.length < 16) {
+      console.warn(`[${formatDate(new Date())}] ВНИМАНИЕ: задайте SYNC_SECRET в .env (≥16 символов), совпадающий с Сервером 1 — иначе приём синхронизации отключён`);
+    }
     
     const adminUser = process.env.ADMIN_USERNAME || 'admin';
-    const adminPass = process.env.ADMIN_PASSWORD || 'admin123';
-    console.log('Данные для входа:');
+    console.log('Вход в админ-панель: логин и пароль заданы в .env (ADMIN_USERNAME / ADMIN_PASSWORD).');
     console.log(`  Логин: ${adminUser}`);
-    console.log(`  Пароль: ${adminPass}`);
+    console.log('  Пароль не выводится в консоль из соображений безопасности.');
     console.log('\n' + '='.repeat(50) + '\n');
   });
 }

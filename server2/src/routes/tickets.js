@@ -6,6 +6,7 @@ const archiver = require('archiver');
 const db = require('../config/database');
 const TicketModel = require('../models/Ticket');
 const { requireAuth } = require('./auth');
+const { requireSyncSecret } = require('../middleware/syncAuth');
 const { upload, uploadErrorHandler, UPLOAD_DIR } = require('../middleware/upload');
 const { auditLog } = require('../utils/logger');
 
@@ -22,8 +23,8 @@ router.get('/sync/history', requireAuth, async (req, res) => {
   }
 });
 
-// POST /api/tickets/sync - синхронизация с Server 1 (внутренний API)
-router.post('/sync', async (req, res) => {
+// POST /api/tickets/sync - синхронизация с Server 1 (внутренний API, общий SYNC_SECRET)
+router.post('/sync', requireSyncSecret, async (req, res) => {
   try {
     const {
       id,
@@ -36,8 +37,6 @@ router.post('/sync', async (req, res) => {
       created_at,
       files
     } = req.body;
-
-    console.log('[DEBUG] Server 2 получил синхронизацию:', { id, areas, problem });
 
     // Создаём заявку
     const ticket = await TicketModel.createFromSync({
@@ -188,8 +187,17 @@ router.get('/:id/files/:filename', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Заявка не найдена' });
     }
 
-    // Проверяем существование файла
-    const filePath = path.join(UPLOAD_DIR, filename);
+    // Проверяем существование файла (только имя внутри каталога загрузок)
+    const safeName = path.basename(filename);
+    if (!safeName || safeName === '.' || safeName === '..') {
+      return res.status(400).json({ error: 'Некорректное имя файла' });
+    }
+    const resolvedUpload = path.resolve(UPLOAD_DIR);
+    const filePath = path.resolve(resolvedUpload, safeName);
+    const rel = path.relative(resolvedUpload, filePath);
+    if (rel.startsWith('..') || path.isAbsolute(rel)) {
+      return res.status(400).json({ error: 'Некорректное имя файла' });
+    }
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ error: 'Файл не найден' });
     }

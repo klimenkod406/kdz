@@ -26,6 +26,13 @@ class SyncService {
 
       console.log(`[${formatDate(new Date())}] Отправка ${tickets.length} заявок...`);
 
+      const syncSecret = process.env.SYNC_SECRET;
+      if (!syncSecret || syncSecret.length < 16) {
+        console.error(`[${formatDate(new Date())}] SYNC_SECRET не задан в .env или короче 16 символов — синхронизация невозможна`);
+        await this.logSync(0, false, 'SYNC_SECRET не настроен');
+        return { success: false, error: 'SYNC_SECRET не настроен' };
+      }
+
       let sentCount = 0;
       let errorCount = 0;
 
@@ -70,7 +77,10 @@ class SyncService {
             created_at: ticket.created_at,
             files: filesData
           }, {
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${syncSecret}`
+            },
             maxBodyLength: 100 * 1024 * 1024,  // 100MB
             maxContentLength: 100 * 1024 * 1024,  // 100MB
             timeout: 120000  // 120 секунд

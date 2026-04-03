@@ -1,5 +1,4 @@
 const express = require('express');
-const cors = require('cors');
 const cron = require('node-cron');
 const path = require('path');
 const SyncService = require('./services/SyncService');
@@ -15,8 +14,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
 
-// Middleware
-app.use(cors());
+// Middleware (без открытого CORS — форма и API с одного origin)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -39,6 +37,9 @@ const syncInterval = process.env.SYNC_INTERVAL_MINUTES || 5;
 // Планировщик синхронизации (запускается каждые N минут)
 console.log(`[${formatDate(new Date())}] Планировщик синхронизации запущен (интервал: ${syncInterval} мин)`);
 console.log(`[${formatDate(new Date())}] Server 2 URL: ${process.env.SERVER2_URL}`);
+if (!process.env.SYNC_SECRET || process.env.SYNC_SECRET.length < 16) {
+  console.warn(`[${formatDate(new Date())}] ВНИМАНИЕ: задайте SYNC_SECRET в .env (≥16 символов), совпадающий с Сервером 2 — иначе синхронизация не выполнится`);
+}
 
 cron.schedule(`*/${syncInterval} * * * *`, async () => {
   console.log(`\n[${formatDate(new Date())}] Запуск плановой синхронизации...`);

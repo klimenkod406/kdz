@@ -10,8 +10,6 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
   try {
     const { employee_name, employee_email, department, areas, problem, solution } = req.body;
 
-    console.log('[DEBUG] Получены данные:', { employee_name, areas, problem });
-
     // Парсим JSON массив областей
     let areasArray = [];
     try {
@@ -27,8 +25,6 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
 
     // Фильтруем пустые и невалидные значения
     areasArray = areasArray.filter(a => a && typeof a === 'string' && a.trim().length > 0);
-
-    console.log('[DEBUG] Обработанные области:', areasArray);
 
     // Валидация - проверяем на пустые строки тоже
     if (!employee_name || !employee_name.trim()) {
@@ -86,67 +82,6 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
       }
     }
     res.status(500).json({ error: 'Ошибка создания заявки' });
-  }
-});
-
-// GET /api/tickets - список всех заявок
-router.get('/', async (req, res) => {
-  try {
-    const tickets = await TicketModel.findAll();
-    res.json(tickets);
-  } catch (err) {
-    console.error('Ошибка получения заявок:', err);
-    res.status(500).json({ error: 'Ошибка получения заявок' });
-  }
-});
-
-// GET /api/tickets/stats - статистика
-router.get('/stats', async (req, res) => {
-  try {
-    const stats = await TicketModel.getStats();
-    res.json(stats);
-  } catch (err) {
-    console.error('Ошибка получения статистики:', err);
-    res.status(500).json({ error: 'Ошибка получения статистики' });
-  }
-});
-
-// GET /api/tickets/:id - заявка по ID с вложениями
-router.get('/:id', async (req, res) => {
-  try {
-    const ticket = await TicketModel.findByIdWithAttachments(req.params.id);
-    if (!ticket) {
-      return res.status(404).json({ error: 'Заявка не найдена' });
-    }
-    res.json(ticket);
-  } catch (err) {
-    console.error('Ошибка получения заявки:', err);
-    res.status(500).json({ error: 'Ошибка получения заявки' });
-  }
-});
-
-// GET /api/tickets/:id/files/:filename - скачивание файла
-router.get('/:id/files/:filename', async (req, res) => {
-  try {
-    const { id, filename } = req.params;
-    
-    // Проверяем существование заявки
-    const ticket = await TicketModel.findById(id);
-    if (!ticket) {
-      return res.status(404).json({ error: 'Заявка не найдена' });
-    }
-
-    // Проверяем существование файла
-    const filePath = path.join(UPLOAD_DIR, filename);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'Файл не найден' });
-    }
-
-    // Отправляем файл
-    res.download(filePath);
-  } catch (err) {
-    console.error('Ошибка скачивания файла:', err);
-    res.status(500).json({ error: 'Ошибка скачивания файла' });
   }
 });
 

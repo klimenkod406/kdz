@@ -1,7 +1,16 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const router = express.Router();
 const AdminModel = require('../models/Admin');
 const { auditLog } = require('../utils/logger');
+
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Слишком много попыток входа. Повторите позже.' }
+});
 
 // Middleware для проверки авторизации
 function requireAuth(req, res, next) {
@@ -12,7 +21,7 @@ function requireAuth(req, res, next) {
 }
 
 // POST /api/auth/login - вход
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
 
