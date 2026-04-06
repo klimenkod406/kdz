@@ -1223,7 +1223,8 @@
                 health: 'Безопасность',
                 productivity: 'Производительность',
                 overstock: 'Запасы',
-                environment: 'Среда'
+                environment: 'Среда',
+                other: 'Другое'
             };
             return names[area] || area;
         }
@@ -1367,8 +1368,11 @@
                                         previewHtml = `<div class="file-icon">${getFileIcon(att.file_original_name)}</div>`;
                                     }
                                     
+                                    // Находим реальный индекс в currentAttachments
+                                    const realIndex = currentAttachments.findIndex(a => a.id === att.id);
+
                                     return `
-                                        <div class="attachment-item" onclick="openLightbox(${index})" style="cursor: pointer;">
+                                        <div class="attachment-item" onclick="openLightbox(${realIndex})" style="cursor: pointer;">
                                             <div class="attachment-preview">
                                                 ${previewHtml}
                                             </div>
