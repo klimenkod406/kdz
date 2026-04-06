@@ -249,6 +249,7 @@
         .area-productivity { background: #fffde7; color: #fbc02d; }
         .area-overstock { background: #f5f5f5; color: #616161; }
         .area-environment { background: #e8f5e9; color: #388e3c; }
+        .area-other { background: #eceff1; color: #455a64; }
 
         .btn-sm {
             padding: 6px 12px;
@@ -1336,11 +1337,17 @@
             // Рендерим вложения с группировкой
             let attachmentsHtml = '';
             if (currentAttachments.length > 0) {
+                // Создаём карту с индексами для каждого вложения
+                const attachmentIndexMap = new Map();
+                currentAttachments.forEach((att, idx) => {
+                    attachmentIndexMap.set(att.file_name, idx);
+                });
+
                 // Группируем по типам
-                const photos = currentAttachments.filter(a => 
+                const photos = currentAttachments.filter(a =>
                     a.file_mime_type && ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'].includes(a.file_mime_type)
                 );
-                const videos = currentAttachments.filter(a => 
+                const videos = currentAttachments.filter(a =>
                     a.file_mime_type && ['video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo'].includes(a.file_mime_type)
                 );
                 const files = currentAttachments.filter(a => !photos.includes(a) && !videos.includes(a));
@@ -1353,12 +1360,14 @@
                                 <h3>${icon} ${title} (${items.length})</h3>
                             </div>
                             <div class="attachments-grid">
-                                ${items.map((att, index) => {
+                                ${items.map((att) => {
+                                    // Получаем реальный индекс из карты
+                                    const realIndex = attachmentIndexMap.get(att.file_name);
                                     const fileType = getFileType(att.file_original_name);
                                     const fileUrl = '/uploads/' + att.file_name;
                                     const isImage = fileType === 'image';
                                     const isVideo = fileType === 'video';
-                                    
+
                                     let previewHtml = '';
                                     if (isImage) {
                                         previewHtml = `<img src="${fileUrl}" alt="${escapeHtml(att.file_original_name)}" loading="lazy">`;
@@ -1367,9 +1376,6 @@
                                     } else {
                                         previewHtml = `<div class="file-icon">${getFileIcon(att.file_original_name)}</div>`;
                                     }
-                                    
-                                    // Находим реальный индекс в currentAttachments
-                                    const realIndex = currentAttachments.findIndex(a => a.id === att.id);
 
                                     return `
                                         <div class="attachment-item" onclick="openLightbox(${realIndex})" style="cursor: pointer;">
