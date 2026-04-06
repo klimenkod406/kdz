@@ -227,8 +227,7 @@ router.post('/restore', async (req, res) => {
         'ticket_comments',
         'ticket_history',
         'sync_logs',
-        'tickets',
-        'session'
+        'tickets'
       ];
 
       for (const table of tablesToClear) {
@@ -343,8 +342,7 @@ router.post('/restore-sql', async (req, res) => {
         'ticket_comments',
         'ticket_history',
         'sync_logs',
-        'tickets',
-        'session'
+        'tickets'
       ];
 
       for (const table of tablesToClear) {
