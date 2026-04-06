@@ -7,6 +7,7 @@ const db = require('./config/database');
 const AdminModel = require('./models/Admin');
 const authRouter = require('./routes/auth').router;
 const ticketsRouter = require('./routes/tickets');
+const databaseRouter = require('./routes/database');
 const { uploadErrorHandler } = require('./middleware/upload');
 const { logger, LOG_DIR } = require('./utils/logger');
 
@@ -67,6 +68,7 @@ app.get('/favicon.ico', (req, res) => {
 // Маршруты
 app.use('/api/auth', authRouter);
 app.use('/api/tickets', ticketsRouter);
+app.use('/api/database', databaseRouter);
 
 // Главная страница - вход
 app.get('/', (req, res) => {

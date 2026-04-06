@@ -810,6 +810,29 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(102, 126, 234, 0.411)
         }
+
+        /* Анимации для уведомлений */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -909,6 +932,35 @@
         </div>
     </div>
 
+    <!-- Секция управления базой данных -->
+    <div class="container" style="margin-top: 20px;">
+        <div class="filters-card">
+            <h3 style="margin-bottom: 20px;">🗄️ Управление базой данных</h3>
+            <div class="filters-row">
+                <div class="filter-group">
+                    <button class="btn" onclick="exportDatabase()" style="background: #27ae60; width: 100%;">
+                        📥 Выгрузить БД
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <button class="btn" onclick="showRestoreModal()" style="background: #f39c12; width: 100%;">
+                        📤 Восстановить БД
+                    </button>
+                </div>
+                <div class="filter-group">
+                    <button class="btn" onclick="showClearModal()" style="background: #e74c3c; width: 100%;">
+                        🗑️ Очистить БД
+                    </button>
+                </div>
+            </div>
+            <div id="dbStats" style="margin-top: 15px; font-size: 13px; color: #666;">
+                Загрузка статистики...
+            </div>
+            <div id="lastExportInfo" style="margin-top: 10px; font-size: 12px; color: #999; display: none;">
+            </div>
+        </div>
+    </div>
+
     <!-- Модальное окно заявки -->
     <div class="modal-overlay" id="ticketModal">
         <div class="modal">
@@ -918,6 +970,88 @@
             </div>
             <div class="modal-body" id="modalBody">
                 Загрузка...
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения очистки БД -->
+    <div class="modal-overlay" id="clearDbModal">
+        <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+                <h2>⚠️ Очистить базу данных</h2>
+                <button class="modal-close" onclick="closeClearModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #f39c12; margin-bottom: 20px;">
+                    <p style="color: #856404; margin: 0; font-size: 15px;">
+                        <strong>Внимание!</strong> Это действие удалит все заявки, комментарии, историю и вложения.
+                    </p>
+                </div>
+                <p style="color: #333; margin-bottom: 20px;">
+                    Будут очищены следующие таблицы:
+                </p>
+                <ul style="color: #666; margin-bottom: 20px; padding-left: 20px;">
+                    <li>Заявки (tickets)</li>
+                    <li>Вложения (ticket_attachments)</li>
+                    <li>Комментарии (ticket_comments)</li>
+                    <li>История изменений (ticket_history)</li>
+                    <li>Логи синхронизации (sync_logs)</li>
+                    <li>Сессии (session)</li>
+                </ul>
+                <p style="color: #e74c3c; margin-bottom: 20px; font-weight: 500;">
+                    Это действие нельзя отменить!
+                </p>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="clearConfirmText" placeholder="Введите 'ОЧИСТИТЬ БД' для подтверждения" 
+                           style="flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px;">
+                    <button class="btn" onclick="clearDatabase()" style="background: #e74c3c; min-width: 150px;">
+                        Очистить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно восстановления БД -->
+    <div class="modal-overlay" id="restoreDbModal">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>📤 Восстановить базу данных</h2>
+                <button class="modal-close" onclick="closeRestoreModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; border-left: 4px solid #2196f3; margin-bottom: 20px;">
+                    <p style="color: #0d47a1; margin: 0; font-size: 15px;">
+                        <strong>Восстановление БД</strong><br>
+                        Выберите JSON или SQL файл, который был ранее выгружен через функцию "Выгрузить БД".
+                    </p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; color: #333; font-weight: 500;">
+                        Файл для восстановления:
+                    </label>
+                    <input type="file" id="restoreFileInput" accept=".json,.sql" 
+                           style="width: 100%; padding: 12px; border: 2px dashed #ddd; border-radius: 6px; font-size: 14px;">
+                    <div style="margin-top: 8px; font-size: 12px; color: #666;">
+                        Поддерживаемые форматы: .json (для чтения), .sql (для бэкапа)
+                    </div>
+                </div>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <p style="color: #856404; margin: 0; font-size: 13px;">
+                        <strong>Важно:</strong> Текущие данные будут заменены данными из файла. 
+                        Таблица администраторов не будет затронута.
+                    </p>
+                </div>
+                <div id="restoreProgress" style="display: none; margin-bottom: 20px;">
+                    <div style="background: #f0f0f0; height: 30px; border-radius: 6px; overflow: hidden;">
+                        <div id="restoreProgressBar" style="background: #27ae60; height: 100%; width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; color: white; font-size: 13px;">
+                            0%
+                        </div>
+                    </div>
+                </div>
+                <button class="btn" onclick="restoreDatabase()" style="background: #f39c12; width: 100%;">
+                    Восстановить
+                </button>
             </div>
         </div>
     </div>
@@ -1524,7 +1658,7 @@
         // Автообновление статистики
         setInterval(loadStats, 60000);
     </script>
-    
+
     <!-- Глобальные функции (должны быть вне DOMContentLoaded) -->
     <script>
         // Функция выхода (глобальная)
@@ -1537,6 +1671,318 @@
             }
             window.location.href = '/';
         }
+
+        // ============================================
+        // Функции управления базой данных
+        // ============================================
+
+        // Загрузка статистики БД
+        async function loadDatabaseStats() {
+            try {
+                const response = await fetch('/api/database/stats');
+                if (!response.ok) return;
+                
+                const stats = await response.json();
+                const dbStatsDiv = document.getElementById('dbStats');
+                
+                let html = '<strong>Статистика базы данных:</strong><br>';
+                const tableNames = {
+                    'tickets': 'Заявки',
+                    'ticket_attachments': 'Вложения',
+                    'ticket_comments': 'Комментарии',
+                    'ticket_history': 'История',
+                    'sync_logs': 'Логи синхронизации',
+                    'admins': 'Администраторы',
+                    'session': 'Сессии'
+                };
+                
+                for (const [table, count] of Object.entries(stats.tables)) {
+                    const name = tableNames[table] || table;
+                    html += `${name}: ${count} | `;
+                }
+                html += `<br><strong>Всего записей: ${stats.totalRecords}</strong>`;
+                
+                dbStatsDiv.innerHTML = html;
+            } catch (err) {
+                console.error('Ошибка загрузки статистики БД:', err);
+            }
+        }
+
+        // Выгрузка БД
+        async function exportDatabase() {
+            try {
+                showNotification('Экспорт базы данных...', 'info');
+                
+                const response = await fetch('/api/database/export');
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка экспорта');
+                }
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Показываем информацию о созданных файлах
+                    const dbStatsDiv = document.getElementById('lastExportInfo');
+                    
+                    dbStatsDiv.innerHTML = `
+                        <strong style="color: #27ae60;">✓ Последний экспорт:</strong><br>
+                        📁 Путь: <code style="background: #f0f0f0; padding: 2px 6px; border-radius: 3px;">${result.path}</code><br>
+                        📄 backup.json (${result.stats.tables} таблиц, ${result.stats.totalRecords} записей)<br>
+                        📄 backup.sql (SQL INSERT statements)
+                    `;
+                    dbStatsDiv.style.display = 'block';
+                    
+                    showNotification(`База данных экспортирована: ${result.stats.totalRecords} записей в ${result.stats.tables} таблицах`, 'success');
+                } else {
+                    throw new Error(result.message || 'Ошибка экспорта');
+                }
+            } catch (err) {
+                showNotification('Ошибка экспорта базы данных: ' + err.message, 'error');
+            }
+        }
+
+        // Показать модальное окно очистки
+        function showClearModal() {
+            document.getElementById('clearDbModal').classList.add('active');
+            document.getElementById('clearConfirmText').value = '';
+        }
+
+        // Закрыть модальное окно очистки
+        function closeClearModal() {
+            document.getElementById('clearDbModal').classList.remove('active');
+        }
+
+        // Очистка БД
+        async function clearDatabase() {
+            const confirmText = document.getElementById('clearConfirmText').value.trim();
+            
+            if (confirmText !== 'ОЧИСТИТЬ БД') {
+                showNotification('Введите "ОЧИСТИТЬ БД" для подтверждения', 'warning');
+                return;
+            }
+            
+            if (!confirm('Вы уверены, что хотите очистить всю базу данных? Это действие нельзя отменить!')) {
+                return;
+            }
+            
+            try {
+                showNotification('Очистка базы данных...', 'info');
+                
+                const response = await fetch('/api/database/clear', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Ошибка очистки');
+                }
+                
+                closeClearModal();
+                showNotification('База данных успешно очищена', 'success');
+                
+                // Перезагружаем страницу
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } catch (err) {
+                showNotification('Ошибка очистки базы данных: ' + err.message, 'error');
+            }
+        }
+
+        // Показать модальное окно восстановления
+        function showRestoreModal() {
+            document.getElementById('restoreDbModal').classList.add('active');
+            document.getElementById('restoreFileInput').value = '';
+            document.getElementById('restoreProgress').style.display = 'none';
+        }
+
+        // Закрыть модальное окно восстановления
+        function closeRestoreModal() {
+            document.getElementById('restoreDbModal').classList.remove('active');
+        }
+
+        // Восстановление БД
+        async function restoreDatabase() {
+            const fileInput = document.getElementById('restoreFileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showNotification('Выберите файл для восстановления', 'warning');
+                return;
+            }
+            
+            const isJson = file.name.endsWith('.json');
+            const isSql = file.name.endsWith('.sql');
+            
+            if (!isJson && !isSql) {
+                showNotification('Файл должен быть в формате .json или .sql', 'warning');
+                return;
+            }
+            
+            if (!confirm('Вы уверены, что хотите восстановить базу данных? Текущие данные будут заменены.')) {
+                return;
+            }
+            
+            try {
+                // Показываем прогресс
+                document.getElementById('restoreProgress').style.display = 'block';
+                updateProgress(10);
+                
+                showNotification('Чтение файла...', 'info');
+                
+                // Читаем файл
+                const fileContent = await readFileAsText(file);
+                updateProgress(30);
+                
+                if (isJson) {
+                    // Восстановление из JSON
+                    showNotification('Восстановление из JSON...', 'info');
+                    
+                    const data = JSON.parse(fileContent);
+                    updateProgress(50);
+                    
+                    const response = await fetch('/api/database/restore', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ data })
+                    });
+                    
+                    updateProgress(80);
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Ошибка восстановления');
+                    }
+                    
+                    updateProgress(100);
+                    
+                    closeRestoreModal();
+                    showNotification(`База данных восстановлена: ${result.restoredTables.length} таблиц`, 'success');
+                    
+                } else if (isSql) {
+                    // Восстановление из SQL
+                    showNotification('Восстановление из SQL...', 'info');
+                    
+                    const response = await fetch('/api/database/restore-sql', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sqlContent: fileContent })
+                    });
+                    
+                    updateProgress(80);
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Ошибка восстановления');
+                    }
+                    
+                    updateProgress(100);
+                    
+                    closeRestoreModal();
+                    showNotification(`SQL восстановлен: ${result.executedStatements} операций`, 'success');
+                }
+                
+                // Перезагружаем страницу
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+                
+            } catch (err) {
+                document.getElementById('restoreProgress').style.display = 'none';
+                showNotification('Ошибка восстановления базы данных: ' + err.message, 'error');
+            }
+        }
+
+        // Вспомогательная функция для чтения файла
+        function readFileAsText(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsText(file);
+            });
+        }
+
+        // Вспомогательная функция для обновления прогресса
+        function updateProgress(percent) {
+            const bar = document.getElementById('restoreProgressBar');
+            bar.style.width = percent + '%';
+            bar.textContent = percent + '%';
+        }
+
+        // Вспомогательная функция для уведомлений
+        function showNotification(message, type = 'info') {
+            // Создаем элемент уведомления
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                padding: 15px 25px;
+                border-radius: 8px;
+                color: white;
+                font-size: 14px;
+                font-weight: 500;
+                z-index: 10000;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                animation: slideIn 0.3s ease;
+                max-width: 400px;
+            `;
+            
+            // Цвета для разных типов
+            const colors = {
+                'success': '#27ae60',
+                'error': '#e74c3c',
+                'warning': '#f39c12',
+                'info': '#3498db'
+            };
+            
+            notification.style.background = colors[type] || colors['info'];
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            // Автоматическое удаление через 3 секунды
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+
+        // Закрытие модальных окон по клику на пустую зону
+        document.addEventListener('DOMContentLoaded', () => {
+            ['clearDbModal', 'restoreDbModal'].forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (modal) {
+                    modal.addEventListener('click', (e) => {
+                        if (e.target.id === modalId) {
+                            modal.classList.remove('active');
+                        }
+                    });
+                }
+            });
+            
+            // Загрузка статистики БД при инициализации
+            loadDatabaseStats();
+        });
+
+        // Закрытие модальных окон по ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeClearModal();
+                closeRestoreModal();
+            }
+        });
     </script>
 </body>
 </html>
