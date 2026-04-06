@@ -130,7 +130,14 @@ router.post('/clear', async (req, res) => {
     try {
       await client.query('BEGIN');
 
-      // Очищаем таблицы в правильном порядке (сначала зависимые)
+      // Получаем существующие таблицы
+      const tablesResult = await client.query(`
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = 'public'
+      `);
+      const existingTables = tablesResult.rows.map(row => row.tablename);
+
+      // Очищаем только существующие таблицы в правильном порядке
       const tablesToClear = [
         'ticket_attachments',
         'ticket_comments',
@@ -142,11 +149,19 @@ router.post('/clear', async (req, res) => {
 
       const clearedTables = [];
       for (const table of tablesToClear) {
-        const result = await client.query(`DELETE FROM ${table}`);
-        clearedTables.push({
-          table,
-          rowsDeleted: result.rowCount
-        });
+        if (existingTables.includes(table)) {
+          const result = await client.query(`DELETE FROM ${table}`);
+          clearedTables.push({
+            table,
+            rowsDeleted: result.rowCount
+          });
+        } else {
+          clearedTables.push({
+            table,
+            rowsDeleted: 0,
+            note: 'таблица не существует'
+          });
+        }
       }
 
       await client.query('COMMIT');
@@ -199,7 +214,14 @@ router.post('/restore', async (req, res) => {
     try {
       await client.query('BEGIN');
 
-      // Сначала очищаем все таблицы (правильный порядок из-за внешних ключей)
+      // Получаем существующие таблицы
+      const tablesResult = await client.query(`
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = 'public'
+      `);
+      const existingTables = tablesResult.rows.map(row => row.tablename);
+
+      // Очищаем только существующие таблицы
       const tablesToClear = [
         'ticket_attachments',
         'ticket_comments',
@@ -210,7 +232,9 @@ router.post('/restore', async (req, res) => {
       ];
 
       for (const table of tablesToClear) {
-        await client.query(`DELETE FROM ${table}`);
+        if (existingTables.includes(table)) {
+          await client.query(`DELETE FROM ${table}`);
+        }
       }
 
       // Восстанавливаем данные из экспорта
@@ -306,7 +330,14 @@ router.post('/restore-sql', async (req, res) => {
     try {
       await client.query('BEGIN');
 
-      // Сначала очищаем все таблицы
+      // Получаем существующие таблицы
+      const tablesResult = await client.query(`
+        SELECT tablename FROM pg_tables
+        WHERE schemaname = 'public'
+      `);
+      const existingTables = tablesResult.rows.map(row => row.tablename);
+
+      // Очищаем только существующие таблицы
       const tablesToClear = [
         'ticket_attachments',
         'ticket_comments',
@@ -317,7 +348,9 @@ router.post('/restore-sql', async (req, res) => {
       ];
 
       for (const table of tablesToClear) {
-        await client.query(`DELETE FROM ${table}`);
+        if (existingTables.includes(table)) {
+          await client.query(`DELETE FROM ${table}`);
+        }
       }
 
       // Парсим SQL и выполняем INSERT statements
