@@ -116,13 +116,13 @@ router.get('/export', requireAuth, async (req, res) => {
         };
       }
 
-      // Цвет статуса
+      // Цвет статуса (чёрный текст на цветном фоне)
       const statusCell = row.getCell('status');
       const statusColors = {
-        'Новая': { fgColor: { argb: '1976D2' }, fontColor: { argb: 'FFFFFF' } },
-        'В работе': { fgColor: { argb: 'F57C00' }, fontColor: { argb: 'FFFFFF' } },
-        'Решена': { fgColor: { argb: '388E3C' }, fontColor: { argb: 'FFFFFF' } },
-        'Закрыта': { fgColor: { argb: '757575' }, fontColor: { argb: 'FFFFFF' } }
+        'Новая': { fgColor: { argb: 'E3F2FD' }, fontColor: { argb: '1976D2' } },
+        'В работе': { fgColor: { argb: 'FFF3E0' }, fontColor: { argb: 'F57C00' } },
+        'Решена': { fgColor: { argb: 'E8F5E9' }, fontColor: { argb: '388E3C' } },
+        'Закрыта': { fgColor: { argb: 'F5F5F5' }, fontColor: { argb: '757575' } }
       };
       const statusValue = statusCell.value;
       if (statusColors[statusValue]) {
@@ -140,23 +140,24 @@ router.get('/export', requireAuth, async (req, res) => {
     // Заморозить заголовок
     worksheet.views = [{ state: 'frozen', ySplit: 1 }];
 
-    // Форматирование имени файла с фильтрами
+    // Форматирование имени файла с фильтрами (латиница для совместимости)
     let filenameSuffix = '';
-    if (status) filenameSuffix += `_статус-${status}`;
-    if (area) filenameSuffix += `_область-${area}`;
-    if (dateFrom) filenameSuffix += `_от-${dateFrom.replace(/[:\-]/g, '')}`;
-    if (dateTo) filenameSuffix += `_до-${dateTo.replace(/[:\-]/g, '')}`;
+    if (status) filenameSuffix += `_status-${status}`;
+    if (area) filenameSuffix += `_area-${area}`;
+    if (dateFrom) filenameSuffix += `_from-${dateFrom.replace(/[:\-]/g, '')}`;
+    if (dateTo) filenameSuffix += `_to-${dateTo.replace(/[:\-]/g, '')}`;
     
-    const filename = `Отчет_KAYDZEN${filenameSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    const filename = `Report_KAYDZEN${filenameSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
     // Отправляем файл
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
+    // Используем filename* с UTF-8 для поддержки кириллицы + fallback ascii
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="${encodeURIComponent(filename)}"`
+      `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`
     );
 
     await workbook.xlsx.write(res);

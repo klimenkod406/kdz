@@ -27,7 +27,7 @@
             border-radius: 8px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             border-top: 5px solid transparent;
-            border-image: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+            border-image: linear-gradient(90deg, #1a2b6d 0%, #00a651 100%);
             border-image-slice: 1;
         }
 
@@ -39,7 +39,7 @@
         .brand-kaydzen {
             font-size: 28px;
             font-weight: 800;
-            color: #1a1a2e;
+            color: #1a2b6d;
             letter-spacing: 6px;
             text-transform: uppercase;
             display: block;
@@ -47,7 +47,7 @@
 
         h1 {
             text-align: center;
-            color: #1e3a5f;
+            color: #1a2b6d;
             font-size: 35px;
             font-weight: 600;
         }
@@ -64,7 +64,7 @@
         }
 
         .section-title {
-            color: #1e3a5f;
+            color: #1a2b6d;
             margin-bottom: 20px;
             font-size: 22px;
             font-weight: 600;
@@ -102,7 +102,7 @@
         textarea:focus,
         select:focus {
             outline: none;
-            border-color: #1e3a5f;
+            border-color: #1a2b6d;
             box-shadow: 0 0 6px 2px #3575c86f;
         }
 
@@ -216,12 +216,12 @@
         }
 
         .file-upload:hover {
-            border-color: #1e3a5f;
+            border-color: #1a2b6d;
             background-color: #f0fffe;
         }
 
         .file-upload.dragover {
-            border-color: #00b894;
+            border-color: #00a651;
             background-color: #e0fffa;
         }
 
@@ -271,7 +271,7 @@
 
         .file-icon {
             margin-right: 10px;
-            color: #00b894;
+            color: #00a651;
             font-weight: bold;
             font-size: 18px;
         }
@@ -319,7 +319,7 @@
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #1e3a5f 0%, #00b894 100%);
+            background: linear-gradient(90deg, #1a2b6d 0%, #00a651 100%);
             width: 0%;
             transition: width 0.3s;
         }
@@ -328,7 +328,7 @@
             display: block;
             width: 100%;
             padding: 15px;
-            background-color: #1e3a5f;
+            background-color: #1a2b6d;
             color: white;
             border: none;
             border-radius: 4px;
@@ -385,8 +385,8 @@
 
                 <div class="row">
                     <div class="form-group">
-                        <label for="employee_email">Email <span class="required">*</span></label>
-                        <input type="email" id="employee_email" name="employee_email" required placeholder="example@company.ru">
+                        <label for="employee_email">Email</label>
+                        <input type="email" id="employee_email" name="employee_email" placeholder="example@company.ru">
                     </div>
                     <div class="form-group">
                         <label for="department">Отдел</label>
@@ -543,6 +543,17 @@
             }
         });
 
+        // Сброс чекбоксов областей к исходному состоянию
+        function resetAreaCheckboxes() {
+            allAreaCheckboxes.forEach(cb => {
+                cb.checked = false;
+                cb.disabled = false;
+                cb.closest('.checkbox-item').style.opacity = '1';
+                cb.closest('.checkbox-item').style.cursor = 'pointer';
+            });
+            areaOther.checked = false;
+        }
+
         // Иконки для типов файлов
         function getFileIcon(filename) {
             const ext = filename.split('.').pop().toLowerCase();
@@ -684,6 +695,7 @@
                 if (response.ok && result.success) {
                     showAlert('✅ Заявка успешно отправлена! Номер: ' + result.ticket.id.substring(0, 8), 'success');
                     form.reset();
+                    resetAreaCheckboxes();
                     selectedFiles = [];
                     updateFileList();
                 } else {
@@ -741,6 +753,7 @@
                         if (result.success) {
                             showAlert('✅ Заявка успешно отправлена! Номер: ' + result.ticket.id.substring(0, 8), 'success');
                             form.reset();
+                            resetAreaCheckboxes();
                             selectedFiles = [];
                             updateFileList();
                         } else {
