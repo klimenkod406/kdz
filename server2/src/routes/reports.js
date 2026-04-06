@@ -154,10 +154,9 @@ router.get('/export', requireAuth, async (req, res) => {
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
-    // Используем filename* с UTF-8 для поддержки кириллицы + fallback ascii
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="${filename}"; filename*=UTF-8''${encodeURIComponent(filename)}`
+      `attachment; filename="${filename}"`
     );
 
     await workbook.xlsx.write(res);
