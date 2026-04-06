@@ -22,33 +22,29 @@ router.get('/export', requireAuth, async (req, res) => {
     workbook.creator = 'KAYDZEN';
     workbook.created = new Date();
 
-    const worksheet = workbook.addWorksheet('Отчёт по заявкам', {
-      properties: { tabColor: { argb: '1a1a2e' } }
-    });
+    const worksheet = workbook.addWorksheet('Отчёт по заявкам');
 
-    // Настройка столбцов
-    worksheet.columns = [
-      { header: 'ID', key: 'id', width: 12 },
-      { header: 'Дата создания', key: 'created_at', width: 20 },
-      { header: 'Сотрудник', key: 'employee_name', width: 25 },
-      { header: 'Email', key: 'employee_email', width: 30 },
-      { header: 'Отдел', key: 'department', width: 20 },
-      { header: 'Области', key: 'areas', width: 30 },
-      { header: 'Проблема', key: 'problem', width: 40 },
-      { header: 'Решение', key: 'solution', width: 40 },
-      { header: 'Статус', key: 'status', width: 15 }
-    ];
+    // Заголовок
+    const headerRow = worksheet.addRow([
+      'ID', 'Дата создания', 'Сотрудник', 'Email', 'Отдел',
+      'Области', 'Проблема', 'Решение', 'Статус'
+    ]);
 
     // Стили заголовка
-    const headerRow = worksheet.getRow(1);
     headerRow.font = { bold: true, color: { argb: 'FFFFFF' }, size: 11 };
     headerRow.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: '1a1a2e' }
+      fgColor: { argb: '1a2b6d' }
     };
     headerRow.alignment = { vertical: 'middle', wrapText: true };
-    headerRow.height = 30;
+    headerRow.height = 25;
+
+    // Ширины столбцов
+    worksheet.columns = [
+      { width: 12 }, { width: 20 }, { width: 25 }, { width: 30 },
+      { width: 20 }, { width: 30 }, { width: 40 }, { width: 40 }, { width: 15 }
+    ];
 
     // Карта перевода статусов
     const statusNames = {
@@ -73,7 +69,6 @@ router.get('/export', requireAuth, async (req, res) => {
 
     // Заполняем данные
     for (const ticket of tickets) {
-      // Форматируем области
       let areasText = '';
       try {
         const areas = JSON.parse(ticket.areas);
@@ -84,30 +79,28 @@ router.get('/export', requireAuth, async (req, res) => {
         areasText = ticket.areas || '-';
       }
 
-      // Форматируем дату
       const createdDate = ticket.created_at
         ? new Date(ticket.created_at).toLocaleString('ru-RU')
         : 'Неизвестно';
 
-      worksheet.addRow({
-        id: ticket.id,
-        created_at: createdDate,
-        employee_name: ticket.employee_name || '-',
-        employee_email: ticket.employee_email || '-',
-        department: ticket.department || '-',
-        areas: areasText,
-        problem: ticket.problem || '-',
-        solution: ticket.solution || '-',
-        status: statusNames[ticket.status] || ticket.status
-      });
+      worksheet.addRow([
+        ticket.id,
+        createdDate,
+        ticket.employee_name || '-',
+        ticket.employee_email || '-',
+        ticket.department || '-',
+        areasText,
+        ticket.problem || '-',
+        ticket.solution || '-',
+        statusNames[ticket.status] || ticket.status
+      ]);
     }
 
-    // Применяем стили к строкам данных
+    // Чередование цветов строк и стилизация статуса
     for (let i = 2; i <= worksheet.rowCount; i++) {
       const row = worksheet.getRow(i);
       row.alignment = { wrapText: true, vertical: 'top' };
-      
-      // Чередование цветов строк
+
       if (i % 2 === 0) {
         row.fill = {
           type: 'pattern',
@@ -116,8 +109,8 @@ router.get('/export', requireAuth, async (req, res) => {
         };
       }
 
-      // Цвет статуса (чёрный текст на цветном фоне)
-      const statusCell = row.getCell('status');
+      // Цвет статуса (столбец 9)
+      const statusCell = row.getCell(9);
       const statusColors = {
         'Новая': { fgColor: { argb: 'E3F2FD' }, fontColor: { argb: '1976D2' } },
         'В работе': { fgColor: { argb: 'FFF3E0' }, fontColor: { argb: 'F57C00' } },
@@ -130,15 +123,6 @@ router.get('/export', requireAuth, async (req, res) => {
         statusCell.font = { color: statusColors[statusValue].fontColor, bold: true };
       }
     }
-
-    // Автофильтр
-    worksheet.autoFilter = {
-      from: { row: 1, column: 1 },
-      to: { row: Math.max(worksheet.rowCount, 2), column: 9 }
-    };
-
-    // Заморозить заголовок
-    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
 
     // Форматирование имени файла с фильтрами (латиница для совместимости)
     let filenameSuffix = '';
@@ -159,8 +143,8 @@ router.get('/export', requireAuth, async (req, res) => {
       `attachment; filename="${filename}"`
     );
 
-    await workbook.xlsx.write(res);
-    res.end();
+    const buffer = await workbook.xlsx.writeBuffer();
+    res.end(buffer);
 
   } catch (err) {
     console.error('Ошибка экспорта отчёта:', err);
