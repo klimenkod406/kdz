@@ -854,6 +854,7 @@
         <div class="header-left">
             <div class="nav-brand">KAYDZEN</div>
             <nav class="nav-links">
+                <button onclick="showReportModal()">📊 Отчёты</button>
                 <button onclick="showDbManagement()">🗄️ Управление БД</button>
             </nav>
         </div>
@@ -915,9 +916,18 @@
                         <option value="environment">Окружающая среда</option>
                     </select>
                 </div>
-                <div class="filter-group" style="flex: 0;">
-                    <label>&nbsp;</label>
-                    <button class="btn-outline" onclick="resetFilters()">Сбросить</button>
+            </div>
+            <div class="filters-row" style="margin-top: 15px;">
+                <div class="filter-group">
+                    <label>Дата от</label>
+                    <input type="datetime-local" id="dateFromFilter" onchange="applyFilters()">
+                </div>
+                <div class="filter-group">
+                    <label>Дата до</label>
+                    <input type="datetime-local" id="dateToFilter" onchange="applyFilters()">
+                </div>
+                <div class="filter-group" style="flex: 0; display: flex; align-items: flex-end;">
+                    <button class="btn-outline" onclick="resetFilters()" style="white-space: nowrap;">Сбросить</button>
                 </div>
             </div>
         </div>
@@ -1083,6 +1093,85 @@
             <div id="lightboxMedia"></div>
             <button class="lightbox-nav lightbox-next" onclick="nextAttachment()">❯</button>
             <div class="lightbox-info" id="lightboxInfo"></div>
+        </div>
+    </div>
+
+    <!-- Модальное окно отчётности -->
+    <div class="modal-overlay" id="reportModal">
+        <div class="modal" style="max-width: 650px;">
+            <div class="modal-header">
+                <h2>📊 Экспорт отчёта</h2>
+                <button class="modal-close" onclick="closeReportModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="ticket-section">
+                    <h3>Параметры отчёта</h3>
+                    <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                        Выберите критерии для формирования отчёта. Все данные будут экспортированы в Excel файл.
+                    </p>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">
+                            Период (дата от):
+                        </label>
+                        <input type="datetime-local" id="reportDateFrom"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">
+                            Период (дата до):
+                        </label>
+                        <input type="datetime-local" id="reportDateTo"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                    </div>
+
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">
+                            Статус:
+                        </label>
+                        <select id="reportStatus"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                            <option value="">Все статусы</option>
+                            <option value="new">Новые</option>
+                            <option value="in_progress">В работе</option>
+                            <option value="resolved">Решены</option>
+                            <option value="closed">Закрыты</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">
+                            Область:
+                        </label>
+                        <select id="reportArea"
+                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 14px;">
+                            <option value="">Все области</option>
+                            <option value="quality">Качество продукта</option>
+                            <option value="cost">Стоимость</option>
+                            <option value="sales">Увеличение продаж</option>
+                            <option value="disorder">Беспорядок</option>
+                            <option value="health">Здоровье и безопасность</option>
+                            <option value="productivity">Производительность</option>
+                            <option value="overstock">Чрезмерные запасы</option>
+                            <option value="environment">Окружающая среда</option>
+                        </select>
+                    </div>
+
+                    <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <p style="color: #0d47a1; margin: 0; font-size: 13px;">
+                            <strong>Информация:</strong> В отчёт будут включены все данные заявок кроме вложений:
+                            ID, дата создания, сотрудник, email, отдел, области, проблема, решение, статус.
+                        </p>
+                    </div>
+
+                    <button class="btn" onclick="exportReport()" style="background: #27ae60; width: 100%; padding: 14px; font-size: 15px;">
+                        📥 Экспортировать в Excel
+                    </button>
+
+                    <div id="reportResult" style="margin-top: 15px; display: none;"></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1261,11 +1350,23 @@
         }
 
         function applyFilters() {
-            currentFilters = {
-                search: document.getElementById('searchInput').value,
-                status: document.getElementById('statusFilter').value,
-                area: document.getElementById('areaFilter').value
-            };
+            currentFilters = {};
+            
+            const search = document.getElementById('searchInput').value;
+            if (search) currentFilters.search = search;
+            
+            const status = document.getElementById('statusFilter').value;
+            if (status) currentFilters.status = status;
+            
+            const area = document.getElementById('areaFilter').value;
+            if (area) currentFilters.area = area;
+            
+            const dateFrom = document.getElementById('dateFromFilter').value;
+            if (dateFrom) currentFilters.dateFrom = dateFrom;
+            
+            const dateTo = document.getElementById('dateToFilter').value;
+            if (dateTo) currentFilters.dateTo = dateTo;
+            
             currentPage = 1;
             loadTickets();
         }
@@ -1274,6 +1375,8 @@
             document.getElementById('searchInput').value = '';
             document.getElementById('statusFilter').value = '';
             document.getElementById('areaFilter').value = '';
+            document.getElementById('dateFromFilter').value = '';
+            document.getElementById('dateToFilter').value = '';
             currentFilters = {};
             currentPage = 1;
             loadTickets();
@@ -2032,6 +2135,102 @@
             if (e.key === 'Escape') {
                 closeClearModal();
                 closeRestoreModal();
+                closeReportModal();
+            }
+        });
+
+        // ============================================
+        // Функции модального окна отчётности
+        // ============================================
+
+        // Показать модальное окно отчётности
+        function showReportModal() {
+            document.getElementById('reportModal').classList.add('active');
+            document.getElementById('reportResult').style.display = 'none';
+            // Очистить поля
+            document.getElementById('reportDateFrom').value = '';
+            document.getElementById('reportDateTo').value = '';
+            document.getElementById('reportStatus').value = '';
+            document.getElementById('reportArea').value = '';
+        }
+
+        // Закрыть модальное окно отчётности
+        function closeReportModal() {
+            document.getElementById('reportModal').classList.remove('active');
+        }
+
+        // Экспорт отчёта в Excel
+        async function exportReport() {
+            const dateFrom = document.getElementById('reportDateFrom').value;
+            const dateTo = document.getElementById('reportDateTo').value;
+            const status = document.getElementById('reportStatus').value;
+            const area = document.getElementById('reportArea').value;
+
+            const resultDiv = document.getElementById('reportResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<p style="color: #3498db;">⏳ Формирование отчёта...</p>';
+
+            try {
+                // Формируем параметры
+                const params = new URLSearchParams();
+                if (dateFrom) params.append('dateFrom', dateFrom);
+                if (dateTo) params.append('dateTo', dateTo);
+                if (status) params.append('status', status);
+                if (area) params.append('area', area);
+
+                // Запрос на экспорт
+                const response = await fetch('/api/reports/export?' + params.toString());
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Ошибка экспорта' }));
+                    throw new Error(errorData.error || 'Ошибка экспорта');
+                }
+
+                // Получаем blob с файлом
+                const blob = await response.blob();
+
+                // Создаём ссылку для скачивания
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+
+                // Извлекаем имя файла из заголовка Content-Disposition
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = 'Отчет_KAYDZEN.xlsx';
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename\*?="?([^";]+)"?/);
+                    if (filenameMatch) {
+                        filename = decodeURIComponent(filenameMatch[1]);
+                    }
+                }
+
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+
+                resultDiv.innerHTML = '<p style="color: #27ae60;">✓ Отчёт успешно экспортирован!</p>';
+
+                // Закрываем модальное окно через 2 секунды
+                setTimeout(() => {
+                    closeReportModal();
+                }, 2000);
+
+            } catch (err) {
+                resultDiv.innerHTML = `<p style="color: #e74c3c;">✗ Ошибка: ${err.message}</p>`;
+            }
+        }
+
+        // Закрытие модального окна отчётности по клику на пустую зону
+        document.addEventListener('DOMContentLoaded', () => {
+            const reportModal = document.getElementById('reportModal');
+            if (reportModal) {
+                reportModal.addEventListener('click', (e) => {
+                    if (e.target.id === 'reportModal') {
+                        closeReportModal();
+                    }
+                });
             }
         });
     </script>

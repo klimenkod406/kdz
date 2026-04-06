@@ -106,6 +106,8 @@ router.get('/', requireAuth, async (req, res) => {
       status,
       area,
       search,
+      dateFrom,
+      dateTo,
       sortBy = 'created_at',
       sortOrder = 'DESC'
     } = req.query;
@@ -116,6 +118,8 @@ router.get('/', requireAuth, async (req, res) => {
       status,
       area,
       search,
+      dateFrom,
+      dateTo,
       sortBy,
       sortOrder
     });

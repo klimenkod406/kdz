@@ -122,6 +122,8 @@ class TicketModel {
       status,
       area,
       search,
+      dateFrom,
+      dateTo,
       sortBy = 'created_at',
       sortOrder = 'DESC'
     } = options;
@@ -146,6 +148,20 @@ class TicketModel {
     if (search) {
       query += ` AND (employee_name ILIKE $${paramIndex} OR problem ILIKE $${paramIndex} OR solution ILIKE $${paramIndex})`;
       values.push(`%${search}%`);
+      paramIndex++;
+    }
+
+    if (dateFrom) {
+      query += ` AND created_at >= $${paramIndex}`;
+      values.push(dateFrom);
+      paramIndex++;
+    }
+
+    if (dateTo) {
+      // Добавляем время до конца дня, если указана только дата
+      const dateToEnd = dateTo.includes(' ') ? dateTo : `${dateTo} 23:59:59`;
+      query += ` AND created_at <= $${paramIndex}`;
+      values.push(dateToEnd);
       paramIndex++;
     }
 
@@ -314,6 +330,50 @@ class TicketModel {
       LIMIT $2
     `;
     const result = await db.query(query, [`%${queryText}%`, limit]);
+    return result.rows;
+  }
+
+  // Получение данных для отчёта (без вложений)
+  static async getReportData(options = {}) {
+    const {
+      status,
+      area,
+      dateFrom,
+      dateTo
+    } = options;
+
+    let query = 'SELECT * FROM tickets WHERE 1=1';
+    const values = [];
+    let paramIndex = 1;
+
+    if (status) {
+      query += ` AND status = $${paramIndex}`;
+      values.push(status);
+      paramIndex++;
+    }
+
+    if (area) {
+      query += ` AND area = $${paramIndex}`;
+      values.push(area);
+      paramIndex++;
+    }
+
+    if (dateFrom) {
+      query += ` AND created_at >= $${paramIndex}`;
+      values.push(dateFrom);
+      paramIndex++;
+    }
+
+    if (dateTo) {
+      const dateToEnd = dateTo.includes(' ') ? dateTo : `${dateTo} 23:59:59`;
+      query += ` AND created_at <= $${paramIndex}`;
+      values.push(dateToEnd);
+      paramIndex++;
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const result = await db.query(query, values);
     return result.rows;
   }
 }
