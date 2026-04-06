@@ -158,8 +158,9 @@ class TicketModel {
     }
 
     if (dateTo) {
-      // Добавляем время до конца дня, если указана только дата
-      const dateToEnd = dateTo.includes(' ') ? dateTo : `${dateTo} 23:59:59`;
+      // Извлекаем дату и добавляем 23:59:59 для полного дня
+      const datePart = dateTo.split('T')[0];
+      const dateToEnd = `${datePart} 23:59:59`;
       query += ` AND created_at <= $${paramIndex}`;
       values.push(dateToEnd);
       paramIndex++;
@@ -365,7 +366,9 @@ class TicketModel {
     }
 
     if (dateTo) {
-      const dateToEnd = dateTo.includes(' ') ? dateTo : `${dateTo} 23:59:59`;
+      // Извлекаем дату и добавляем 23:59:59 для полного дня
+      const datePart = dateTo.split('T')[0];
+      const dateToEnd = `${datePart} 23:59:59`;
       query += ` AND created_at <= $${paramIndex}`;
       values.push(dateToEnd);
       paramIndex++;
