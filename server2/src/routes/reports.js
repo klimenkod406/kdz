@@ -96,31 +96,19 @@ router.get('/export', requireAuth, async (req, res) => {
       ]);
     }
 
-    // Чередование цветов строк и стилизация статуса
+    // Чередование цветов строк
     for (let i = 2; i <= worksheet.rowCount; i++) {
       const row = worksheet.getRow(i);
       row.alignment = { wrapText: true, vertical: 'top' };
 
       if (i % 2 === 0) {
-        row.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'F2F2F2' }
-        };
-      }
-
-      // Цвет статуса (столбец 9)
-      const statusCell = row.getCell(9);
-      const statusColors = {
-        'Новая': { fgColor: { argb: 'E3F2FD' }, fontColor: { argb: '1976D2' } },
-        'В работе': { fgColor: { argb: 'FFF3E0' }, fontColor: { argb: 'F57C00' } },
-        'Решена': { fgColor: { argb: 'E8F5E9' }, fontColor: { argb: '388E3C' } },
-        'Закрыта': { fgColor: { argb: 'F5F5F5' }, fontColor: { argb: '757575' } }
-      };
-      const statusValue = statusCell.value;
-      if (statusColors[statusValue]) {
-        statusCell.fill = statusColors[statusValue].fgColor;
-        statusCell.font = { color: statusColors[statusValue].fontColor, bold: true };
+        row.eachCell((cell) => {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'F2F2F2' }
+          };
+        });
       }
     }
 
