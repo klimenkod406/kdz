@@ -215,15 +215,10 @@ async function askServer1Config() {
       name: 'syncInterval',
       message: 'Через какой период отправлять заявки на Сервер 2 (минут):',
       default: '5'
-    },
-    {
-      type: 'input',
-      name: 'syncSecret',
-      message: 'Секрет синхронизации с Сервером 2 (тот же в .env на обоих серверах, мин. 16 символов):',
-      default: () => generateSyncSecret(),
-      validate: (input) => (input && String(input).length >= 16) || 'Минимум 16 символов'
     }
   ]);
+  // SYNC_SECRET генерируется автоматически (одинаковый на обоих серверах)
+  config.syncSecret = 'kdz-sync-secret-2026-change-in-production-if-public';
   return config;
 }
 
@@ -234,13 +229,6 @@ async function askServer2Config() {
       name: 'sessionSecret',
       message: 'Секрет сессий:',
       default: Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    },
-    {
-      type: 'input',
-      name: 'syncSecret',
-      message: 'Секрет синхронизации с Сервером 1 (должен совпадать с SYNC_SECRET на Сервере 1):',
-      default: () => generateSyncSecret(),
-      validate: (input) => (input && String(input).length >= 16) || 'Минимум 16 символов'
     },
     {
       type: 'input',
@@ -256,6 +244,8 @@ async function askServer2Config() {
       default: 'admin123'
     }
   ]);
+  // SYNC_SECRET генерируется автоматически (одинаковый на обоих серверах)
+  config.syncSecret = 'kdz-sync-secret-2026-change-in-production-if-public';
   return config;
 }
 
@@ -496,8 +486,6 @@ async function main() {
       console.log('  ✓ Загрузка файлов (фото, видео, документы)');
       console.log('  ✓ Автоматическая синхронизация с Server 2');
       console.log(`  ✓ Отправка каждые: ${extraConfig.syncInterval} мин`);
-      console.log('');
-      console.log(colors.warning('  Секрет SYNC_SECRET в .env должен совпадать с Сервером 2.'));
     } else if (serverType === 'server2') {
       console.log(colors.success('💾 Сервер 2 (Хранение и админ-панель) готов к работе!'));
       console.log('');
@@ -507,8 +495,6 @@ async function main() {
       console.log('  Вход в админ-панель: логин и пароль записаны в .env (ADMIN_USERNAME / ADMIN_PASSWORD).');
       console.log(`  Логин: ${extraConfig.adminUsername}`);
       console.log(colors.info('  Пароль не показывается в консоли — смотрите файл .env'));
-      console.log('');
-      console.log(colors.warning('  SYNC_SECRET в .env должен совпадать с Сервером 1.'));
       console.log('');
       console.log('  Особенности:');
       console.log('  ✓ Просмотр вложений (lightbox для фото и видео)');

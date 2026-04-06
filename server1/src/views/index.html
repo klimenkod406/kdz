@@ -424,6 +424,11 @@
                             <span class="checkmark"></span>
                             Окружающая среда
                         </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" name="areas" value="other" id="areaOther">
+                            <span class="checkmark"></span>
+                            Другое
+                        </label>
                     </div>
                 </div>
 
@@ -474,6 +479,52 @@
         const submitBtn = document.getElementById('submitBtn');
 
         let selectedFiles = [];
+
+        // Логика чекбокса "Другое"
+        const areaOther = document.getElementById('areaOther');
+        const allAreaCheckboxes = document.querySelectorAll('input[name="areas"]');
+
+        areaOther.addEventListener('change', function() {
+            if (this.checked) {
+                // При выборе "Другое" - снимаем все остальные и отключаем
+                allAreaCheckboxes.forEach(cb => {
+                    if (cb !== this) {
+                        cb.checked = false;
+                        cb.disabled = true;
+                        cb.closest('.checkbox-item').style.opacity = '0.5';
+                        cb.closest('.checkbox-item').style.cursor = 'not-allowed';
+                    }
+                });
+            } else {
+                // При снятии "Другое" - включаем все обратно
+                allAreaCheckboxes.forEach(cb => {
+                    if (cb !== this) {
+                        cb.disabled = false;
+                        cb.closest('.checkbox-item').style.opacity = '1';
+                        cb.closest('.checkbox-item').style.cursor = 'pointer';
+                    }
+                });
+            }
+        });
+
+        // При выборе любого другого чекбокса - снимаем "Другое"
+        allAreaCheckboxes.forEach(cb => {
+            if (cb !== areaOther) {
+                cb.addEventListener('change', function() {
+                    if (this.checked && areaOther.checked) {
+                        areaOther.checked = false;
+                        // Включаем все чекбоксы обратно
+                        allAreaCheckboxes.forEach(checkbox => {
+                            if (checkbox !== areaOther) {
+                                checkbox.disabled = false;
+                                checkbox.closest('.checkbox-item').style.opacity = '1';
+                                checkbox.closest('.checkbox-item').style.cursor = 'pointer';
+                            }
+                        });
+                    }
+                });
+            }
+        });
 
         // Иконки для типов файлов
         function getFileIcon(filename) {
