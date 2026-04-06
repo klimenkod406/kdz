@@ -2,8 +2,6 @@
 
 ## ✅ Установщик обновлён и готов к использованию
 
-**Последнее обновление:** 2026-04-03  
-**Версия:** 2.0 (см. также корневой `package.json`)
 
 ---
 
@@ -17,8 +15,6 @@
 |------|------------|
 | `Установить сервер.bat` | Запустить **1 раз** при установке |
 | `Start Server 1.bat` **ИЛИ** `Start Server 2.bat` | Запускать для старта сервера |
-
-**Не нужны все 4 файла одновременно!** На каждом сервере будет свой файл запуска.
 
 ### 1. Запуск установщика
 
@@ -108,7 +104,7 @@ npm install
 ✓ express, pg, dotenv
 ✓ multer, axios, archiver
 ✓ bcrypt, express-session, connect-pg-simple, express-rate-limit
-✓ morgan, winston
+✓ morgan, winston, cors
 ```
 
 ### 3. Создание базы данных
@@ -141,7 +137,7 @@ HOST=0.0.0.0
 PORT=3001
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=tickets_temp
+DB_NAME=tickets_db
 DB_USER=postgres
 DB_PASSWORD=********
 SERVER2_URL=http://localhost:3002
@@ -155,11 +151,12 @@ HOST=0.0.0.0
 PORT=3002
 DB_HOST=localhost
 DB_PORT=5432
-DB_NAME=tickets_permanent
+DB_NAME=tickets_db
 DB_USER=postgres
 DB_PASSWORD=********
 SESSION_SECRET=auto_generated_secret
 SYNC_SECRET=********
+SESSION_COOKIE_SECURE=false
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=********
 ```
@@ -211,15 +208,12 @@ ADMIN_PASSWORD=********
   Админ-панель:
   http://localhost:3002/admin
 
-  Данные для входа:
-  Логин: admin
-  Пароль: admin123
-
   Особенности:
   ✓ Просмотр вложений (lightbox для фото и видео)
   ✓ История изменений статусов
   ✓ Комментарии к заявкам
   ✓ Статистика по заявкам
+  ✓ Защита от перебора паролей (rate limiting)
 
 Запуск сервера...
 
@@ -229,9 +223,9 @@ ADMIN_PASSWORD=********
   Доступен в локальной сети: http://<ваш-ip>:3002
 ==================================================
 
-Данные для входа:
+Вход в админ-панель: логин и пароль заданы в .env (ADMIN_USERNAME / ADMIN_PASSWORD).
   Логин: admin
-  Пароль: admin123
+  Пароль не выводится в консоль из соображений безопасности.
 ==================================================
 ```
 
@@ -314,16 +308,15 @@ kdz/
 ├── server1/
 │   ├── src/
 │   │   ├── config/
-│   │   ├── middleware/      ← upload.js
+│   │   ├── middleware/      ← upload.js (обработка ошибок загрузки)
 │   │   ├── models/
 │   │   ├── routes/
-│   │   ├── services/
+│   │   ├── services/        ← SyncService.js
 │   │   ├── views/
 │   │   ├── index.js
 │   │   └── utils.js
 │   ├── database/
 │   │   └── migrations/
-│   ├── uploads/             ← создаётся при первом запуске
 │   ├── .env
 │   └── package.json
 ├── shared/
@@ -338,16 +331,15 @@ kdz/
 ├── server2/
 │   ├── src/
 │   │   ├── config/
-│   │   ├── middleware/      ← upload.js
+│   │   ├── middleware/      ← upload.js, syncAuth.js (проверка SYNC_SECRET)
 │   │   ├── models/
-│   │   ├── routes/
-│   │   ├── utils/          ← logger.js (Winston)
+│   │   ├── routes/          ← tickets.js, auth.js
+│   │   ├── utils/           ← logger.js (Winston)
 │   │   ├── views/
 │   │   ├── index.js
 │   │   └── utils.js
 │   ├── database/
 │   │   └── migrations/
-│   ├── uploads/             ← создаётся при первом запуске
 │   ├── .env
 │   └── package.json
 ├── shared/

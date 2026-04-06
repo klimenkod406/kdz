@@ -92,10 +92,12 @@ kdz/                    ← Папка проекта
 
 Зависимости серверов (установит установщик):
   Server 1:
-    ✓ express, pg, multer, axios, form-data, node-cron, cors, dotenv
-  
+    ✓ express, pg, multer, axios, form-data, node-cron, dotenv
+
   Server 2:
-    ✓ express, pg, multer, bcrypt, express-session, connect-pg-simple, cors, dotenv
+    ✓ express, pg, multer, axios, archiver, bcrypt
+    ✓ express-session, connect-pg-simple, express-rate-limit
+    ✓ morgan, winston, cors
 
 ================================================================================
                     ЧАСТЫЕ ОШИБКИ

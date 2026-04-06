@@ -2,9 +2,7 @@
 
 Система управления заявками для сотрудников с двухсерверной архитектурой.
 
-**Последнее обновление:** 2026-04-03  
-**Версия:** 1.0.0 (см. `package.json`)  
-**Node.js:** проверено на 24.x (например v24.11.1)  
+**Node.js:** проверено на 24.x (например v24.11.1)
 **Платформа:** в первую очередь Windows; установщик и серверы запускаются и из консоли на Linux/macOS
 
 ---
@@ -19,16 +17,19 @@
 - Автоматическая отправка заявок на Сервер 2 по расписанию (cron, интервал из `SYNC_INTERVAL_MINUTES`)
 - Пометка заявок как отправленных после успешной доставки на Сервер 2
 - Загрузка файлов (фото, видео, документы)
+- CORS не требуется (форма и API с одного origin)
 
 **Порт по умолчанию:** 3001
 
 ### Сервер 2 (Хранение и админ-панель)
 - Постоянное хранение всех заявок
 - Админ-панель для управления заявками
-- Авторизация администраторов
+- Авторизация администраторов (сессии хранятся в PostgreSQL)
 - Изменение статусов, комментарии, история
 - Система логирования (security.log, error.log)
 - Скачивание файлов в виде ZIP-архива
+- Rate limiting для защиты от перебора паролей
+- Приём синхронизаций от Сервера 1 с проверкой `SYNC_SECRET`
 
 **Порт по умолчанию:** 3002
 
@@ -124,13 +125,12 @@ kdz/
 │   │   └── utils.js        # Утилиты
 │   ├── database/
 │   │   └── migrations/     # 001_init.sql
-│   ├── uploads/            # Директория для файлов
 │   ├── .env.example
 │   └── package.json
 ├── server2/                 # Сервер хранения и админ-панель
 │   ├── src/
 │   │   ├── config/         # database.js
-│   │   ├── middleware/     # upload.js
+│   │   ├── middleware/     # upload.js, syncAuth.js (проверка SYNC_SECRET)
 │   │   ├── models/         # Ticket.js, Admin.js
 │   │   ├── routes/         # tickets.js, auth.js
 │   │   ├── utils/          # logger.js (Winston)
@@ -139,17 +139,18 @@ kdz/
 │   │   └── utils.js        # Утилиты
 │   ├── database/
 │   │   └── migrations/     # 001_init.sql
-│   ├── uploads/            # Директория для файлов
-│   ├── logs/               # Логи (security.log, error.log...)
 │   ├── .env.example
 │   └── package.json
-├── shared/                  # Общие константы и утилиты (TICKET_STATUS, formatDate, generateUUID)
-│   └── index.js
+├── shared/                  # Общие константы и утилиты (TICKET_STATUS, SERVER_TYPES, formatDate, generateUUID)
+│   ├── index.js
+│   └── package.json
 ├── installer/               # Установщик
 │   ├── setup.js
 │   ├── package.json
-│   └── node_modules/
-└── package.json
+│   └── package-lock.json
+├── .bat файлы               # Ярлыки для Windows
+├── package.json             # Корневой package (версия проекта)
+└── *.md, *.txt              # Документация
 ```
 
 ---
@@ -164,7 +165,7 @@ kdz/
 | `HOST` | Хост для прослушивания | 0.0.0.0 |
 | `DB_HOST` | Хост PostgreSQL | localhost |
 | `DB_PORT` | Порт PostgreSQL | 5432 |
-| `DB_NAME` | Имя БД | tickets_temp |
+| `DB_NAME` | Имя БД | tickets_db |
 | `DB_USER` | Пользователь БД | postgres |
 | `DB_PASSWORD` | Пароль БД | — |
 | `SERVER2_URL` | URL Сервера 2 | http://localhost:3002 |
@@ -181,10 +182,10 @@ kdz/
 | `HOST` | Хост для прослушивания | 0.0.0.0 |
 | `DB_HOST` | Хост PostgreSQL | localhost |
 | `DB_PORT` | Порт PostgreSQL | 5432 |
-| `DB_NAME` | Имя БД | tickets_permanent |
+| `DB_NAME` | Имя БД | tickets_db |
 | `DB_USER` | Пользователь БД | postgres |
 | `DB_PASSWORD` | Пароль БД | — |
-| `SESSION_SECRET` | Секрет сессий | автогенерация |
+| `SESSION_SECRET` | Секрет сессий | your_secret_key_change_in_production |
 | `SYNC_SECRET` | Тот же секрет, что на Сервере 1 (мин. 16 символов) | — |
 | `SESSION_COOKIE_SECURE` | `true` — cookie только по HTTPS | не задано |
 | `ADMIN_USERNAME` | Логин администратора | admin |
@@ -236,7 +237,7 @@ kdz/
 | `GET` | `/` | Форма подачи заявки |
 | `POST` | `/api/tickets` | Создать заявку (multipart, поле файлов `files`) |
 
-Публичные `GET` для списка заявок и файлов **отключены** — персональные данные доступны только на Сервере 2 после входа администратора.
+Публичные `GET` для списка заявок и файлов **отключены** — персональные данные доступны только на Сервере 2 после входа администратора. Обработка ошибок загрузки файлов реализована через `uploadErrorHandler`.
 
 ### Сервер 2
 
@@ -267,8 +268,9 @@ kdz/
 3. **Используйте сложные пароли** для PostgreSQL
 4. **Настройте HTTPS** при выносе в прод; для cookie с `Secure` задайте `SESSION_COOKIE_SECURE=true`
 5. **Ограничьте доступ** к портам фаерволом в LAN
-6. **Логин администратора** ограничен по частоте запросов (защита от перебора)
+6. **Логин администратора** ограничен по частоте запросов (express-rate-limit, защита от перебора)
 7. **Система логирования** фиксирует действия в админке (входы, изменения статусов, скачивания)
+8. **Сессии хранятся в PostgreSQL** (connect-pg-simple) с `httpOnly` и `sameSite: 'lax'` cookie
 
 ### Система логирования (Server 2)
 
@@ -290,14 +292,14 @@ kdz/
 
 ## 🗄️ База данных
 
-### Сервер 1 (tickets_temp)
+### Сервер 1 (например, tickets_db)
 
 **Таблицы:**
 - `tickets` — заявки (id, employee_name, employee_email, department, areas, problem, solution, status, sent_to_server2, created_at, sent_at)
 - `ticket_attachments` — вложения (id, ticket_id, file_name, file_original_name, file_mime_type, file_size, file_path, created_at)
 - `sync_logs` — логи синхронизации (id, tickets_count, success, error_message, created_at)
 
-### Сервер 2 (tickets_permanent)
+### Сервер 2 (например, tickets_db)
 
 **Таблицы:**
 - `session` — сессии Express (sid, sess, expire)
@@ -306,7 +308,7 @@ kdz/
 - `ticket_attachments` — вложения (id, ticket_id, file_name, file_original_name, file_mime_type, file_size, file_path, received_from_server1_at, created_at)
 - `ticket_comments` — комментарии (id, ticket_id, admin_id, comment, created_at)
 - `ticket_history` — история изменений (id, ticket_id, admin_id, old_status, new_status, comment, created_at)
-- `sync_logs` — логи синхронизации
+- `sync_logs` — логи синхронизации (на Сервере 2 заполняется при приёме заявок от Сервера 1)
 
 ---
 
@@ -372,14 +374,30 @@ npm run dev
 ### npm scripts
 
 **Server 1:**
-- `npm start` — запуск production
+- `npm start` — запуск production (`node src/index.js`)
 - `npm run dev` — запуск с nodemon (autoreload)
-- `npm run setup` — запуск установщика
+- `npm run setup` — запуск установщика (`node ../installer/setup.js server1`)
 
 **Server 2:**
-- `npm start` — запуск production
+- `npm start` — запуск production (`node src/index.js`)
 - `npm run dev` — запуск с nodemon (autoreload)
-- `npm run setup` — запуск установщика
+- `npm run setup` — запуск установщика (`node ../installer/setup.js server2`)
+
+### Middleware
+
+**Server 1:**
+- `uploadErrorHandler` — обработка ошибок загрузки файлов (multer)
+
+**Server 2:**
+- `uploadErrorHandler` — обработка ошибок загрузки файлов (multer)
+- `syncAuth` — проверка `SYNC_SECRET` при приёме синхронизаций от Сервера 1 (`Authorization: Bearer <SYNC_SECRET>`)
+
+### Особенности Server 2
+
+- Лимит JSON и URL-encoded данных: **100MB** (для приёма больших файлов в составе синхронизации)
+- HTTP-логирование через **Morgan** (записывается в `combined.log` через Winston)
+- Администратор по умолчанию создаётся автоматически при старте (если не существует)
+- Таблица сессий создаётся автоматически при старте
 
 ---
 
@@ -392,11 +410,11 @@ npm run dev
 | express | ^4.18.2 | Веб-фреймворк |
 | pg | ^8.11.3 | PostgreSQL клиент |
 | dotenv | ^16.3.1 | Переменные окружения |
-| cors | ^2.8.5 | CORS middleware |
 | node-cron | ^3.0.3 | Планировщик задач |
 | axios | ^1.6.2 | HTTP клиент |
 | multer | ^1.4.5-lts.1 | Загрузка файлов |
 | form-data | ^4.0.0 | FormData для multipart |
+| nodemon (dev) | ^3.0.2 | Автоперезагрузка при разработке |
 
 ### Server 2
 
@@ -411,9 +429,11 @@ npm run dev
 | bcrypt | ^5.1.1 | Хеширование паролей |
 | express-session | ^1.17.3 | Сессии |
 | connect-pg-simple | ^9.0.1 | Хранение сессий в PostgreSQL |
+| express-rate-limit | ^7.5.0 | Ограничение частоты запросов |
 | morgan | ^1.10.0 | HTTP логирование |
 | winston | ^3.11.0 | Логгер |
 | archiver | ^7.0.0 | Архивация (ZIP) |
+| nodemon (dev) | ^3.0.2 | Автоперезагрузка при разработке |
 
 ### Installer
 
