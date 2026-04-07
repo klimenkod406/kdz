@@ -26,7 +26,7 @@ router.get('/export', requireAuth, async (req, res) => {
 
     // Заголовок
     const headerRow = worksheet.addRow([
-      'ID', 'Дата создания', 'Сотрудник', 'Email', 'Отдел',
+      'ID', 'Дата создания', 'Сотрудник', 'Соавтор', 'Email', 'Отдел',
       'Области', 'Проблема', 'Решение', 'Статус'
     ]);
 
@@ -42,7 +42,7 @@ router.get('/export', requireAuth, async (req, res) => {
 
     // Ширины столбцов
     worksheet.columns = [
-      { width: 12 }, { width: 20 }, { width: 25 }, { width: 30 },
+      { width: 12 }, { width: 20 }, { width: 25 }, { width: 25 }, { width: 30 },
       { width: 20 }, { width: 30 }, { width: 40 }, { width: 40 }, { width: 15 }
     ];
 
@@ -87,6 +87,7 @@ router.get('/export', requireAuth, async (req, res) => {
         ticket.id,
         createdDate,
         ticket.employee_name || '-',
+        ticket.co_author || '-',
         ticket.employee_email || '-',
         ticket.department || '-',
         areasText,
