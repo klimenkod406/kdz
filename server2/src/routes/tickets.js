@@ -29,6 +29,7 @@ router.post('/sync', requireSyncSecret, async (req, res) => {
     const {
       id,
       employee_name,
+      co_author,
       employee_email,
       department,
       areas,
@@ -42,6 +43,7 @@ router.post('/sync', requireSyncSecret, async (req, res) => {
     const ticket = await TicketModel.createFromSync({
       id,
       employee_name,
+      co_author,
       employee_email,
       department,
       areas,

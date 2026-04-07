@@ -5,6 +5,7 @@ class TicketModel {
   static async create(ticketData) {
     const {
       employee_name,
+      co_author,
       employee_email,
       department,
       areas,  // Массив областей
@@ -14,13 +15,14 @@ class TicketModel {
 
     const query = `
       INSERT INTO tickets (
-        employee_name, employee_email, department, areas, problem, solution
-      ) VALUES ($1, $2, $3, $4, $5, $6)
+        employee_name, co_author, employee_email, department, areas, problem, solution
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7)
       RETURNING *
     `;
 
     const values = [
       employee_name,
+      co_author || null,
       employee_email || null,
       department || null,
       JSON.stringify(areas),  // Сохраняем как JSON

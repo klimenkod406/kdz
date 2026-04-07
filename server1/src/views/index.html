@@ -29,6 +29,16 @@
             border-top: 5px solid transparent;
             border-image: linear-gradient(90deg, #1a2b6d 0%, #00a651 100%);
             border-image-slice: 1;
+            position: relative;
+        }
+
+        .logo-top-left {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
         }
 
         .brand-header {
@@ -366,6 +376,7 @@
 </head>
 <body>
     <div class="container">
+        <img src="logo.png" alt="Логотип" class="logo-top-left">
         <div class="brand-header">
             <span class="brand-kaydzen">KAYDZEN</span>
         </div>
@@ -381,6 +392,11 @@
                 <div class="form-group">
                     <label for="employee_name">ФИО <span class="required">*</span></label>
                     <input type="text" id="employee_name" name="employee_name" required placeholder="Иванов Иван Иванович">
+                </div>
+
+                <div class="form-group">
+                    <label for="co_author">Соавтор</label>
+                    <input type="text" id="co_author" name="co_author" placeholder="ФИО соавтора (необязательно)">
                 </div>
 
                 <div class="row">
@@ -674,6 +690,7 @@
 
             const data = {
                 employee_name: document.getElementById('employee_name').value,
+                co_author: document.getElementById('co_author').value,
                 employee_email: document.getElementById('employee_email').value,
                 department: document.getElementById('department').value,
                 areas: selectedAreas,  // Массив областей
@@ -717,6 +734,7 @@
 
             // Добавляем текстовые поля
             formData.append('employee_name', document.getElementById('employee_name').value);
+            formData.append('co_author', document.getElementById('co_author').value);
             formData.append('employee_email', document.getElementById('employee_email').value);
             formData.append('department', document.getElementById('department').value);
             formData.append('areas', JSON.stringify(selectedAreas));  // JSON массив

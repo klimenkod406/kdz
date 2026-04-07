@@ -8,7 +8,7 @@ const { upload, uploadErrorHandler, UPLOAD_DIR } = require('../middleware/upload
 // POST /api/tickets - создание новой заявки с файлами
 router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res) => {
   try {
-    const { employee_name, employee_email, department, areas, problem, solution } = req.body;
+    const { employee_name, co_author, employee_email, department, areas, problem, solution } = req.body;
 
     // Парсим JSON массив областей
     let areasArray = [];
@@ -40,6 +40,7 @@ router.post('/', upload.array('files', 10), uploadErrorHandler, async (req, res)
     // Создаём заявку
     const ticket = await TicketModel.create({
       employee_name: employee_name.trim(),
+      co_author: co_author ? co_author.trim() : null,
       employee_email: employee_email ? employee_email.trim() : null,
       department: department ? department.trim() : null,
       areas: areasArray,

@@ -1285,7 +1285,7 @@
                 return `
                     <tr onclick="openTicket('${ticket.id}')" style="cursor: pointer;">
                         <td>${new Date(ticket.created_at).toLocaleString('ru-RU')}</td>
-                        <td>${escapeHtml(ticket.employee_name)}</td>
+                        <td>${escapeHtml(ticket.employee_name)}${ticket.co_author ? '<br><small style="color: #666;">Соавтор: ' + escapeHtml(ticket.co_author) + '</small>' : ''}</td>
                         <td>${escapeHtml(ticket.department || '-')}</td>
                         <td>${escapeHtml(ticket.problem).substring(0, 50)}${ticket.problem.length > 50 ? '...' : ''}</td>
                         <td>${areasHtml}</td>
@@ -1522,6 +1522,12 @@
                         <label>Сотрудник</label>
                         <value>${escapeHtml(ticket.employee_name)} (${escapeHtml(ticket.employee_email || 'нет email')})</value>
                     </div>
+                    ${ticket.co_author ? `
+                    <div class="ticket-detail">
+                        <label>Соавтор</label>
+                        <value>${escapeHtml(ticket.co_author)}</value>
+                    </div>
+                    ` : ''}
                     <div class="ticket-detail">
                         <label>Отдел</label>
                         <value>${escapeHtml(ticket.department || '-')}</value>

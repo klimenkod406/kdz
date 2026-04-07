@@ -4,6 +4,7 @@
 CREATE TABLE IF NOT EXISTS tickets (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     employee_name VARCHAR(255) NOT NULL,
+    co_author VARCHAR(255),
     employee_email VARCHAR(255),
     department VARCHAR(255),
     areas TEXT NOT NULL,  -- JSON массив областей: ["quality","cost"]
