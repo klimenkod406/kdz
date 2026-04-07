@@ -4,7 +4,9 @@
       "Bash(del *)",
       "Bash(node *)",
       "Bash(npm install)",
-      "Bash(findstr *)"
+      "Bash(findstr *)",
+      "Bash(tasklist)",
+      "Bash(@node *)"
     ]
   },
   "$version": 3

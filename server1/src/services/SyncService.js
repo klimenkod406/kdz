@@ -69,6 +69,7 @@ class SyncService {
           await axios.post(`${this.server2Url}/api/tickets/sync`, {
             id: ticket.id,
             employee_name: ticket.employee_name,
+            co_author: ticket.co_author || '',
             employee_email: ticket.employee_email || '',
             department: ticket.department || '',
             areas: parsedAreas,
