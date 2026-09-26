@@ -1,596 +1,126 @@
-# Система заявок (Ticket System)
+# kdz — Internal Ticket System
 
-Система управления заявками для сотрудников с двухсерверной архитектурой.
+A two-server ticket management system for company employees. Employees
+submit tickets through a web form (Server 1) which forwards them on a
+schedule to the central archive and admin panel (Server 2).
 
-**Node.js:** проверено на 24.x (например v24.11.1)
-**Платформа:** в первую очередь Windows; установщик и серверы запускаются и из консоли на Linux/macOS
+The repository also ships with an interactive installer that walks the
+operator through dependency setup, database creation and service
+registration.
 
----
+## Architecture
 
-## 📋 Описание
+```
+Employees ──► Server 1 (port 3001) ──cron──► Server 2 (port 3002)
+              intake & temporary             archive, admin panel,
+              storage, file uploads          authentication,
+                                             history, ZIP export
+```
 
-Система состоит из двух серверов:
+Both servers share a common module (`shared/`) and use PostgreSQL via
+the `pg` driver. Inter-server communication is gated by a shared
+`SYNC_SECRET`.
 
-### Сервер 1 (Прием заявок)
-- Прием заявок от сотрудников через веб-форму
-- Временное хранение заявок (настраиваемый период)
-- Автоматическая отправка заявок на Сервер 2 по расписанию (cron, интервал из `SYNC_INTERVAL_MINUTES`)
-- Пометка заявок как отправленных после успешной доставки на Сервер 2
-- Загрузка файлов (фото, видео, документы)
-- CORS не требуется (форма и API с одного origin)
+## Components
 
-**Порт по умолчанию:** 3001
+### Server 1 — Intake
+- Accepts tickets from employees via a web form
+- Temporarily stores them for a configurable retention period
+- Forwards tickets to Server 2 on a cron schedule (interval from
+  `SYNC_INTERVAL_MINUTES`)
+- Marks tickets as sent after successful delivery to Server 2
+- Accepts file uploads (photos, videos, documents)
+- CORS not required — the form and the API share the same origin
 
-### Сервер 2 (Хранение и админ-панель)
-- Постоянное хранение всех заявок
-- Админ-панель для управления заявками
-- Авторизация администраторов (сессии хранятся в PostgreSQL)
-- Изменение статусов, комментарии, история
-- Система логирования (security.log, error.log)
-- Скачивание файлов в виде ZIP-архива
-- Rate limiting для защиты от перебора паролей
-- Приём синхронизаций от Сервера 1 с проверкой `SYNC_SECRET`
+**Default port:** 3001
 
-**Порт по умолчанию:** 3002
+### Server 2 — Archive & Admin
+- Permanent storage of all tickets
+- Admin panel for ticket management
+- Administrator authentication (sessions in PostgreSQL)
+- Status changes, comments, history
+- Logging system (`security.log`, `error.log`)
+- Download all ticket files as a ZIP archive
+- Rate limiting against password brute force
+- Receives synchronizations from Server 1 with `SYNC_SECRET` validation
 
----
+**Default port:** 3002
 
-## ✅ Состояние проекта
+### Installer (`installer/`)
+- Interactive CLI setup script
+- Creates the PostgreSQL databases and roles
+- Generates `SYNC_SECRET` and `.env` files
+- Supports both Windows and Linux/macOS consoles
 
-Актуальная проверка (синтаксис `node --check` для `server1`, `server2`, `shared`, `installer`; `npm install` в этих каталогах):
+## Project status
 
-| Компонент | Статус |
-|-----------|--------|
-| Структура проекта | ✅ Полная |
-| Синтаксис JavaScript | ✅ Проверка пройдена |
-| Миграции базы данных | ✅ В репозитории |
-| Конфигурация | ✅ `server1/.env.example`, `server2/.env.example` (имена БД — примеры; установщик по умолчанию задаёт `tickets_temp` / `tickets_permanent`) |
-| Зависимости npm | ✅ Устанавливаются; см. предупреждения `npm audit` при необходимости |
-| Установщик | ✅ `installer/setup.js` |
-| Документация | ✅ Этот файл и `INSTALLER-GUIDE.md`, `START_HERE.md`, `LOGGING-SYSTEM.md` |
+Latest verification (see commit history) covers:
+- `node --check` for `server1`, `server2`, `shared`, `installer`
+- `npm install` in each of the above folders
 
----
+## Requirements
 
-## 🚀 Быстрый старт
+- **Node.js 18+** (verified on 24.x)
+- **PostgreSQL** (tested on 14+)
+- The installer works on Windows, Linux and macOS consoles
 
-### Требования
-- **Node.js 16+** (проверено: 24.14.1)
-- **PostgreSQL 12+**
+## Installation (Windows, no code changes)
 
-### ⚠️ Важно при скачивании с GitHub
+1. Double-click `install-dependencies.bat` — installs npm packages in
+   `installer/`.
+2. Double-click `Установить сервер.bat` — runs the interactive
+   installer.
+3. After the installer finishes, use the desktop shortcuts:
+   `Start Server 1.bat` and `Start Server 2.bat`.
 
-**После скачивания репозитория:**
+## Installation (any OS, manual)
 
-1. **Установите зависимости:**
+```bash
+git clone https://github.com/klimenkod406/kdz.git
+cd kdz
 
-   **Windows:**
-   - Дважды кликните на `install-dependencies.bat`
+# 1. Install the installer's own deps
+( cd installer && npm install )
 
-   **Любая ОС:**
-   ```bash
-   cd installer
-   npm install
-   cd ..
-   ```
+# 2. Run the installer
+node installer/setup.js
 
-2. **Запустите установщик:**
+# 3. Start the servers
+( cd server1 && node src/index.js ) &
+( cd server2 && node src/index.js )
+```
 
-   **Windows:**
-   - Дважды кликните на `Установить сервер.bat`
+The installer will create `.env` files for `server1` and `server2`,
+provision the database, and print the URLs to open in your browser.
 
-   **Любая ОС:**
-   ```bash
-   node installer/setup.js
-   ```
-
-3. **Следуйте инструкциям установщика:**
-   - Выберите тип сервера (1 или 2)
-   - Введите параметры PostgreSQL
-   - Введите URL другого сервера (для синхронизации)
-   - Настройте сетевые параметры
-
-4. **Установщик автоматически:**
-   - Удалит ненужные файлы (оставит только файлы для выбранного сервера)
-   - Установит все зависимости
-   - Проверит критические пакеты
-   - Подключится к PostgreSQL
-   - Создаст базу данных
-   - Выполнит миграции
-   - Создаст файл `.env`
-   - Запустит сервер
-
-> **Примечание:** После установки на каждом сервере останется только необходимая папка:
-> - На Сервере 1: `server1/`, `shared/`, `installer/`
-> - На Сервере 2: `server2/`, `shared/`, `installer/`
-
-### 📄 Подробная документация по установке
-
-Смотрите `INSTALLER-GUIDE.md` — полное руководство по установке.
-
----
-
-## 📁 Структура проекта
+## Project layout
 
 ```
 kdz/
-├── server1/                 # Сервер приема заявок
-│   ├── src/
-│   │   ├── config/         # Конфигурация БД (database.js)
-│   │   ├── middleware/     # Загрузка файлов (upload.js)
-│   │   ├── models/         # Ticket.js
-│   │   ├── routes/         # tickets.js
-│   │   ├── services/       # SyncService.js (синхронизация)
-│   │   ├── views/          # index.html (форма заявки)
-│   │   ├── index.js        # Точка входа
-│   │   └── utils.js        # Утилиты
-│   ├── database/
-│   │   └── migrations/     # 001_init.sql
-│   ├── .env.example
-│   └── package.json
-├── server2/                 # Сервер хранения и админ-панель
-│   ├── src/
-│   │   ├── config/         # database.js
-│   │   ├── middleware/     # upload.js, syncAuth.js (проверка SYNC_SECRET)
-│   │   ├── models/         # Ticket.js, Admin.js
-│   │   ├── routes/         # tickets.js, auth.js, database.js
-│   │   ├── utils/          # logger.js (Winston)
-│   │   ├── views/          # admin.html, login.html
-│   │   ├── index.js        # Точка входа
-│   │   └── utils.js        # Утилиты
-│   ├── database/
-│   │   └── migrations/     # 001_init.sql
-│   ├── backups/            # Экспорты базы данных (создается автоматически)
-│   ├── .env.example
-│   └── package.json
-├── shared/                  # Общие константы и утилиты (TICKET_STATUS, SERVER_TYPES, formatDate, generateUUID)
-│   ├── index.js
-│   └── package.json
-├── installer/               # Установщик
-│   ├── setup.js
-│   ├── package.json
-│   └── package-lock.json
-├── .bat файлы               # Ярлыки для Windows
-├── package.json             # Корневой package (версия проекта)
-└── *.md, *.txt              # Документация
+├── installer/         # setup.js + its own package.json
+├── server1/           # Intake server (Express, port 3001)
+├── server2/           # Archive + admin server (Express, port 3002)
+├── shared/            # Common helpers shared between the servers
+├── install-dependencies.bat
+├── Start Server 1.bat
+├── Start Server 2.bat
+└── Установить сервер.bat
 ```
 
----
+## Documentation
 
-## 🔧 Конфигурация
+- `INSTALLER-GUIDE.md` — full installer walk-through.
+- `LOGGING-SYSTEM.md` — log format, locations, rotation.
+- `START_HERE.md` — quick-start guide.
+- `ИНСТРУКЦИЯ.txt` / `ЧТЕНИЕ.txt` — Russian-language notes.
 
-### Сервер 1 (.env)
+## Security
 
-| Параметр | Описание | По умолчанию |
-|----------|----------|--------------|
-| `PORT` | Порт сервера | 3001 |
-| `HOST` | Хост для прослушивания | 0.0.0.0 |
-| `DB_HOST` | Хост PostgreSQL | localhost |
-| `DB_PORT` | Порт PostgreSQL | 5432 |
-| `DB_NAME` | Имя БД | tickets_db |
-| `DB_USER` | Пользователь БД | postgres |
-| `DB_PASSWORD` | Пароль БД | — |
-| `SERVER2_URL` | URL Сервера 2 | http://localhost:3002 |
-| `SYNC_INTERVAL_MINUTES` | Интервал синхронизации (минуты, cron) | 5 |
-| `SYNC_SECRET` | Секрет синхронизации (одинаковый на обоих серверах) | задан по умолчанию |
+- `SYNC_SECRET` must match between `server1` and `server2`.
+- Rate limiting on Server 2 protects the admin login from brute force.
+- Session storage in PostgreSQL (not in memory) so restarts don't drop
+  logins.
 
-В коде **нет** переменной `TEMP_STORAGE_MINUTES` — не используйте её в `.env` (устаревшее упоминание в старых инструкциях).
+## License
 
-### Сервер 2 (.env)
-
-| Параметр | Описание | По умолчанию |
-|----------|----------|--------------|
-| `PORT` | Порт сервера | 3002 |
-| `HOST` | Хост для прослушивания | 0.0.0.0 |
-| `DB_HOST` | Хост PostgreSQL | localhost |
-| `DB_PORT` | Порт PostgreSQL | 5432 |
-| `DB_NAME` | Имя БД | tickets_db |
-| `DB_USER` | Пользователь БД | postgres |
-| `DB_PASSWORD` | Пароль БД | — |
-| `SESSION_SECRET` | Секрет сессий | your_secret_key_change_in_production |
-| `SYNC_SECRET` | Секрет синхронизации (одинаковый на обоих серверах) | задан по умолчанию |
-| `SESSION_COOKIE_SECURE` | `true` — cookie только по HTTPS | не задано |
-| `ADMIN_USERNAME` | Логин администратора | admin |
-| `ADMIN_PASSWORD` | Пароль администратора | admin123 |
-
-**`SYNC_SECRET`** одинаковый на обоих серверах по умолчанию (установщик задаёт автоматически). Без него синхронизация между серверами не работает.
-
----
-
-## 🌐 Доступ в локальной сети
-
-Оба сервера настроены на прослушивание всех сетевых интерфейсов (`0.0.0.0`).
-
-### ⚠️ Важно: брандмауэр Windows
-
-**Для стабильной работы в локальной сети рекомендуется отключить брандмауэр Windows** на обоих серверах. Это позволит избежать проблем с подключением между серверами и доступа клиентов к форме заявок.
-
-**Отключить брандмауэр:**
-- Откройте **Панель управления** → **Система и безопасность** → **Брандмауэр Защитника Windows**
-- Нажмите **Включение и отключение брандмауэра Defender**
-- Выберите **Отключить брандмауэр Защитника Windows** для обеих сетей (частной и публичной)
-- Нажмите **OK**
-
-> **Примечание:** Отключение брандмауэра безопасно в доверенной локальной сети. Если вы предпочитаете не отключать его полностью, можно вручную открыть необходимые порты (см. ниже).
-
-### Для доступа с других устройств:
-
-1. **Узнайте IP-адрес сервера** в локальной сети:
-   - Windows: `ipconfig`
-   - Linux/Mac: `ifconfig` или `ip addr`
-
-2. **Используйте IP-адрес для доступа:**
-
-   **Сервер 1 (форма подачи заявок):**
-   ```
-   http://<IP-сервера-1>:3001
-   ```
-
-   **Сервер 2 (админ-панель):**
-   ```
-   http://<IP-сервера-2>:3002/admin
-   ```
-
-3. **Откройте порты в фаерволе** (альтернатива отключению брандмауэра):
-   ```powershell
-   # Windows (PowerShell от администратора)
-   New-NetFirewallRule -DisplayName "Ticket Server 1" -Direction Inbound -LocalPort 3001 -Protocol TCP -Action Allow
-   New-NetFirewallRule -DisplayName "Ticket Server 2" -Direction Inbound -LocalPort 3002 -Protocol TCP -Action Allow
-   ```
-
----
-
-## 📊 API
-
-### Сервер 1
-
-Базовый префикс API: `/api/tickets`. Синхронизация с Сервером 2 выполняется **фоновым cron** в `src/index.js`, отдельных HTTP-эндпоинтов «статуса» или «принудительной синхронизации» в текущем коде **нет**.
-
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| `GET` | `/` | Форма подачи заявки |
-| `POST` | `/api/tickets` | Создать заявку (multipart, поле файлов `files`) |
-
-Публичные `GET` для списка заявок и файлов **отключены** — персональные данные доступны только на Сервере 2 после входа администратора. Обработка ошибок загрузки файлов реализована через `uploadErrorHandler`.
-
-### Сервер 2
-
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| `GET` | `/` | Страница входа |
-| `GET` | `/admin` | Админ-панель |
-| `POST` | `/api/auth/login` | Вход |
-| `POST` | `/api/auth/logout` | Выход |
-| `GET` | `/api/auth/me` | Проверка сессии |
-| `GET` | `/api/tickets` | Список заявок (требуется авторизация) |
-| `GET` | `/api/tickets/stats` | Статистика (требуется авторизация) |
-| `GET` | `/api/tickets/search` | Поиск заявок |
-| `GET` | `/api/tickets/sync/history` | История синхронизаций (требуется авторизация) |
-| `GET` | `/api/tickets/:id` | Заявка с комментариями и историей |
-| `PUT` | `/api/tickets/:id/status` | Изменить статус |
-| `POST` | `/api/tickets/:id/comments` | Добавить комментарий |
-| `GET` | `/api/tickets/:id/files/:filename` | Скачать один файл |
-| `POST` | `/api/tickets/:id/files/download-all` | Скачать все файлы одним ZIP |
-| `POST` | `/api/tickets/sync` | Приём заявки от Server 1; заголовок `Authorization: Bearer <SYNC_SECRET>` |
-
-### Управление базой данных (Сервер 2)
-
-Все эндпоинты требуют авторизации администратора.
-
-| Метод | Endpoint | Описание |
-|-------|----------|----------|
-| `GET` | `/api/database/export` | Экспорт БД в папку `backups/` (JSON + SQL) |
-| `POST` | `/api/database/clear` | Очистка всех таблиц (кроме admins) |
-| `POST` | `/api/database/restore` | Восстановление из JSON файла |
-| `POST` | `/api/database/restore-sql` | Восстановление из SQL файла |
-| `GET` | `/api/database/stats` | Статистика базы данных |
-
----
-
-## 🔐 Безопасность
-
-1. **Смените пароль администратора** после первой установки; пароль не дублируется в консоль при старте сервера
-2. **Смените `SYNC_SECRET`** в `.env` на обоих серверах при публичном развертывании (по умолчанию задан одинаковый); без него канал синхронизации отключён
-3. **Используйте сложные пароли** для PostgreSQL
-4. **Настройте HTTPS** при выносе в прод; для cookie с `Secure` задайте `SESSION_COOKIE_SECURE=true`
-5. **Ограничьте доступ** к портам фаерволом в LAN
-6. **Логин администратора** ограничен по частоте запросов (express-rate-limit, защита от перебора)
-7. **Система логирования** фиксирует действия в админке (входы, изменения статусов, скачивания)
-8. **Сессии хранятся в PostgreSQL** (connect-pg-simple) с `httpOnly` и `sameSite: 'lax'` cookie
-
-### Система логирования (Server 2)
-
-| Файл | Назначение |
-|------|------------|
-| `logs/security.log` | События безопасности (входы, изменения статусов, скачивания) |
-| `logs/error.log` | Ошибки |
-| `logs/warn.log` | Предупреждения |
-| `logs/combined.log` | Все логи |
-
-**Примеры логов:**
-```
-[2026-04-02 10:00:00] [INFO] Вход в систему: admin
-[2026-04-02 10:15:00] [INFO] Изменение статуса заявки: uuid
-[2026-04-02 10:25:00] [INFO] Скачивание файлов заявки: uuid
-```
-
-### Управление базой данных (Server 2)
-
-В админ-панели (`/admin`) доступна секция **"Управление базой данных"** с тремя кнопками:
-
-#### 📥 Выгрузить БД
-
-Экспортирует все данные базы данных в папку `server2/backups/` в двух форматах:
-
-- **`backup.json`** — читаемый JSON формат для просмотра и анализа данных
-- **`backup.sql`** — SQL файл с INSERT statements для восстановления
-
-Каждый экспорт создается в отдельной подпапке с временной меткой:
-```
-backups/
-└── 2026-04-06T10-30-00-000Z/
-    ├── backup.json    (для чтения)
-    └── backup.sql     (для бэкапа)
-```
-
-После экспорта на странице отображается:
-- Путь к папке с бэкапом
-- Количество таблиц и записей
-
-#### 📤 Восстановить БД
-
-Восстанавливает данные из ранее выгруженного файла:
-
-**Поддерживаемые форматы:**
-- `.json` — восстановление из JSON файла (читаемый формат)
-- `.sql` — восстановление из SQL файла (бэкап)
-
-**Процесс восстановления:**
-1. Выбор файла через диалог
-2. Автоматическое определение формата (.json или .sql)
-3. Очистка текущих данных (кроме таблицы администраторов)
-4. Пошаговое восстановление с прогресс-баром
-5. Автоматическая перезагрузка страницы
-
-**Защита:**
-- Подтверждение перед восстановлением
-- Таблица `admins` не затрагивается (сохраняет текущих администраторов)
-- Таблица `session` очищается (сессии не восстанавливаются)
-- Обработка ошибок на каждом этапе
-
-#### 🗑️ Очистить БД
-
-Полная очистка всех таблиц базы данных:
-
-**Очищаемые таблицы:**
-- `tickets` — заявки
-- `ticket_attachments` — вложения
-- `ticket_comments` — комментарии
-- `ticket_history` — история изменений
-- `sync_logs` — логи синхронизации
-- `session` — сессии
-
-**Меры безопасности:**
-1. Требуется ввести текст `ОЧИСТИТЬ БД` для подтверждения
-2. Дополнительное подтверждение через `confirm()`
-3. Предупреждение о необратимости действия
-4. Таблица `admins` НЕ очищается (администраторы сохраняются)
-5. Транзакция с rollback при ошибке
-6. Логирование операции в audit log
-
-#### 📊 Статистика БД
-
-На странице управления отображается статистика:
-- Количество записей в каждой таблице
-- Общее количество записей в базе данных
-- Автоматическое обновление при загрузке страницы
-
----
-
-## 🗄️ База данных
-
-### Сервер 1 (например, tickets_db)
-
-**Таблицы:**
-- `tickets` — заявки (id, employee_name, employee_email, department, areas, problem, solution, status, sent_to_server2, created_at, sent_at)
-- `ticket_attachments` — вложения (id, ticket_id, file_name, file_original_name, file_mime_type, file_size, file_path, created_at)
-- `sync_logs` — логи синхронизации (id, tickets_count, success, error_message, created_at)
-
-### Сервер 2 (например, tickets_db)
-
-**Таблицы:**
-- `session` — сессии Express (sid, sess, expire)
-- `admins` — администраторы (id, username, password_hash, created_at, last_login)
-- `tickets` — заявки (id, employee_name, employee_email, department, areas, problem, solution, status, received_from_server1_at, created_at, updated_at)
-- `ticket_attachments` — вложения (id, ticket_id, file_name, file_original_name, file_mime_type, file_size, file_path, received_from_server1_at, created_at)
-- `ticket_comments` — комментарии (id, ticket_id, admin_id, comment, created_at)
-- `ticket_history` — история изменений (id, ticket_id, admin_id, old_status, new_status, comment, created_at)
-- `sync_logs` — логи синхронизации (на Сервере 2 заполняется при приёме заявок от Сервера 1)
-
----
-
-## 📝 Статусы заявок
-
-| Статус | Описание |
-|--------|----------|
-| `new` | Новая заявка |
-| `in_progress` | В работе |
-| `resolved` | Решена |
-| `closed` | Закрыта |
-
----
-
-## 🎯 Области (Areas)
-
-| Область | Описание |
-|---------|----------|
-| `quality` | Качество продукта |
-| `cost` | Стоимость |
-| `sales` | Увеличение продаж |
-| `disorder` | Беспорядок |
-| `health` | Здоровье и безопасность |
-| `productivity` | Производительность |
-| `overstock` | Чрезмерные запасы |
-| `environment` | Окружающая среда |
-
----
-
-## 📎 Поддерживаемые типы файлов
-
-**Изображения:** JPG, JPEG, PNG, GIF, WebP, BMP, TIFF
-
-**Документы:** PDF, DOC, DOCX, XLS, XLSX, TXT, CSV
-
-**Видео:** MP4, WebM, MOV, AVI
-
-**Архивы:** ZIP, RAR, 7Z
-
-### Ограничения
-
-| Параметр | Сервер 1 | Сервер 2 |
-|----------|----------|----------|
-| Макс. размер файла | 50 MB | 100 MB |
-| Макс. количество файлов | 10 | 20 |
-
----
-
-## 🛠️ Разработка
-
-### Запуск в режиме разработки:
-
-```bash
-# Server 1
-cd server1
-npm run dev
-
-# Server 2
-cd server2
-npm run dev
-```
-
-### npm scripts
-
-**Server 1:**
-- `npm start` — запуск production (`node src/index.js`)
-- `npm run dev` — запуск с nodemon (autoreload)
-- `npm run setup` — запуск установщика (`node ../installer/setup.js server1`)
-
-**Server 2:**
-- `npm start` — запуск production (`node src/index.js`)
-- `npm run dev` — запуск с nodemon (autoreload)
-- `npm run setup` — запуск установщика (`node ../installer/setup.js server2`)
-
-### Middleware
-
-**Server 1:**
-- `uploadErrorHandler` — обработка ошибок загрузки файлов (multer)
-
-**Server 2:**
-- `uploadErrorHandler` — обработка ошибок загрузки файлов (multer)
-- `syncAuth` — проверка `SYNC_SECRET` при приёме синхронизаций от Сервера 1 (`Authorization: Bearer <SYNC_SECRET>`)
-
-### Особенности Server 2
-
-- Лимит JSON и URL-encoded данных: **100MB** (для приёма больших файлов в составе синхронизации)
-- HTTP-логирование через **Morgan** (записывается в `combined.log` через Winston)
-- Администратор по умолчанию создаётся автоматически при старте (если не существует)
-- Таблица сессий создаётся автоматически при старте
-
----
-
-## 📦 Зависимости
-
-### Server 1
-
-| Пакет | Версия | Назначение |
-|-------|--------|------------|
-| express | ^4.18.2 | Веб-фреймворк |
-| pg | ^8.11.3 | PostgreSQL клиент |
-| dotenv | ^16.3.1 | Переменные окружения |
-| node-cron | ^3.0.3 | Планировщик задач |
-| axios | ^1.6.2 | HTTP клиент |
-| multer | ^1.4.5-lts.1 | Загрузка файлов |
-| form-data | ^4.0.0 | FormData для multipart |
-| nodemon (dev) | ^3.0.2 | Автоперезагрузка при разработке |
-
-### Server 2
-
-| Пакет | Версия | Назначение |
-|-------|--------|------------|
-| express | ^4.18.2 | Веб-фреймворк |
-| pg | ^8.11.3 | PostgreSQL клиент |
-| dotenv | ^16.3.1 | Переменные окружения |
-| cors | ^2.8.5 | CORS middleware |
-| multer | ^1.4.5-lts.1 | Загрузка файлов |
-| axios | ^1.14.0 | HTTP клиент |
-| bcrypt | ^5.1.1 | Хеширование паролей |
-| express-session | ^1.17.3 | Сессии |
-| connect-pg-simple | ^9.0.1 | Хранение сессий в PostgreSQL |
-| express-rate-limit | ^7.5.0 | Ограничение частоты запросов |
-| morgan | ^1.10.0 | HTTP логирование |
-| winston | ^3.11.0 | Логгер |
-| archiver | ^7.0.0 | Архивация (ZIP) |
-| nodemon (dev) | ^3.0.2 | Автоперезагрузка при разработке |
-
-### Installer
-
-| Пакет | Версия | Назначение |
-|-------|--------|------------|
-| inquirer | ^8.2.6 | Интерактивные опросы |
-| chalk | ^4.1.2 | Цветной вывод |
-| pg | ^8.11.3 | PostgreSQL клиент |
-| dotenv | ^16.3.1 | Переменные окружения |
-| fs-extra | ^11.2.0 | Расширенные FS операции |
-
----
-
-## 🐛 Устранение проблем
-
-### Сервер не запускается
-- Проверьте, что PostgreSQL запущен
-- Проверьте параметры подключения в `.env`
-- Убедитесь, что порты не заняты
-
-### Ошибка синхронизации
-- Проверьте, что Сервер 2 доступен по `SERVER2_URL`
-- Смотрите консоль Server 1 и таблицу `sync_logs` в БД Server 1; на Server 2 история доступна в API `/api/tickets/sync/history` (после входа в админ-панель)
-
-### Не работает авторизация
-- Очистите кэш браузера
-- Проверьте `SESSION_SECRET` в `.env`
-
-### Ошибка "Cannot find module 'inquirer'"
-```bash
-cd installer
-npm install
-```
-
-### Ошибка подключения к PostgreSQL
-- Проверьте пароль PostgreSQL
-- Убедитесь, что PostgreSQL запущен
-- Проверьте параметры в `.env`
-
-### Порт занят
-```
-Error: listen EADDRINUSE: address already in use :::3001
-```
-**Решение:** Измените порт в `.env` или остановите сервис, использующий порт
-
----
-
-## 📄 Документация
-
-| Файл | Описание |
-|------|----------|
-| `README.md` | Основная документация |
-| `INSTALLER-GUIDE.md` | Руководство по установке |
-| `START_HERE.md` | Первый запуск после скачивания |
-| `ИНСТРУКЦИЯ.txt` | Инструкция на русском |
-| `ЧТЕНИЕ.txt` | Дополнительные заметки |
-| `GITHUB-README.txt` | Инструкция для GitHub |
-| `LOGGING-SYSTEM.md` | Система логирования (Server 2) |
-
----
-
-## 📄 Лицензия
-
-Внутренний проект для использования в локальной сети организации.
+MIT — see `LICENSE`.
